@@ -8,7 +8,7 @@ exactly what makes the cost-vs-makespan trade-off in your objective function
 (Score = alpha*Makespan + beta*Cost + gamma*Imbalance) meaningful. If speed
 and cost were uncorrelated or inversely correlated, "cost-aware" scheduling
 would be trivial (always cheaper AND faster) — a fair simulation needs the
-tension.
+tension
 """
 
 import random
