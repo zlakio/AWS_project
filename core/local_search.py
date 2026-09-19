@@ -249,3 +249,75 @@ def iterated_local_search(
                 current = candidate
 
     return best
+
+
+def cost_aware_local_search(
+    initial_schedule: Schedule,
+    dag: DAG,
+    vms: List[VM],
+    alpha: float = 0.5,
+    beta: float = 0.3,
+    gamma: float = 0.2,
+    max_iterations: int = 500,
+    seed: int = None,
+):
+    """
+    Same greedy local search loop as local_search(), but accepts/rejects
+    mutations based on the multi-objective Score (makespan + cost +
+    imbalance) instead of raw makespan alone. This is what makes the
+    search "cost-aware" -- it can now accept a mutation that makes
+    makespan slightly WORSE, if the cost/imbalance improvement outweighs
+    it in the combined score.
+
+    Returns (best_schedule, tracker) -- the tracker is returned too since
+    it holds the running min/max ranges, useful for reporting/plots later.
+    """
+    # Local import to avoid a circular import at module load time
+    # (cost_model doesn't need to import local_search, so this keeps the
+    # dependency one-directional).
+    from core.cost_model import ObjectiveTracker, compute_raw_objectives
+
+    if seed is not None:
+        random.seed(seed)
+
+    tracker = ObjectiveTracker()
+    current = initial_schedule
+
+    for _ in range(max_iterations):
+        operator = random.choice(MUTATION_OPERATORS)
+        candidate = operator(current, dag, vms)
+
+        if not is_feasible(candidate, dag):
+            continue
+
+        # Get RAW (un-normalized) objective values for both schedules first,
+        # then feed BOTH into the tracker before normalizing either one.
+        # This guarantees current and candidate are compared under the
+        # exact same min/max range -- computing one score, then the other,
+        # against a tracker that changed in between would silently compare
+        # them on different scales.
+        current_makespan, current_cost, current_imbalance = compute_raw_objectives(
+            current, dag, vms
+        )
+        cand_makespan, cand_cost, cand_imbalance = compute_raw_objectives(
+            candidate, dag, vms
+        )
+
+        tracker.observe(current_makespan, current_cost, current_imbalance)
+        tracker.observe(cand_makespan, cand_cost, cand_imbalance)
+
+        current_score = (
+            alpha * tracker.normalize_makespan(current_makespan)
+            + beta * tracker.normalize_cost(current_cost)
+            + gamma * tracker.normalize_imbalance(current_imbalance)
+        )
+        candidate_score = (
+            alpha * tracker.normalize_makespan(cand_makespan)
+            + beta * tracker.normalize_cost(cand_cost)
+            + gamma * tracker.normalize_imbalance(cand_imbalance)
+        )
+
+        if candidate_score < current_score - EPSILON:
+            current = candidate
+
+    return current, tracker
