@@ -8,7 +8,8 @@ Two phases, matching the theory:
 """
 
 from typing import Dict, List, Tuple
-from core.models import DAG, VM, Task, Schedule, Assignment
+
+from core.models import DAG, VM, Assignment, Schedule, Task
 
 
 def compute_upward_ranks(dag: DAG) -> None:
@@ -79,6 +80,7 @@ def _earliest_finish_time_on_vm(
     vm: VM,
     dag: DAG,
     schedule: Schedule,
+    min_start: float = 0.0,
 ) -> Tuple[float, float]:
     """
     Finds the earliest (start_time, end_time) for `task` on `vm`, using
@@ -86,9 +88,15 @@ def _earliest_finish_time_on_vm(
     scheduled tasks (plus the gap before the first one, and after the
     last one) and use the first gap the task actually fits into.
 
+    `min_start` is a floor on when the task may start -- 0.0 (the default)
+    changes nothing for normal HEFT scheduling. It matters for DYNAMIC
+    REPAIR (Day 8): when re-scheduling a task after a disruption at
+    simulation time T, the task obviously can't be backdated to before T,
+    even if an earlier gap would otherwise fit it.
+
     Returns (start_time, end_time).
     """
-    ready_time = _data_ready_time(task, vm, dag, schedule)
+    ready_time = max(_data_ready_time(task, vm, dag, schedule), min_start)
     duration = vm.exec_time(task)
     intervals = schedule.vm_busy_intervals(vm.id)
 
@@ -104,7 +112,7 @@ def _earliest_finish_time_on_vm(
 
     # Check gaps BETWEEN consecutive scheduled tasks.
     for i in range(len(intervals) - 1):
-        gap_start = max(ready_time, intervals[i][1])   # can't start before data is ready
+        gap_start = max(ready_time, intervals[i][1])  # can't start before data is ready
         gap_end = intervals[i + 1][0]
         if gap_start + duration <= gap_end:
             return gap_start, gap_start + duration
@@ -142,8 +150,10 @@ def heft_schedule(dag: DAG, vms: List[VM]) -> Schedule:
                 best_start, best_end = start, end
 
         schedule.assignments[task.id] = Assignment(
-            task_id=task.id, vm_id=best_vm_id,
-            start_time=best_start, end_time=best_end,
+            task_id=task.id,
+            vm_id=best_vm_id,
+            start_time=best_start,
+            end_time=best_end,
         )
 
     return schedule
