@@ -20,7 +20,12 @@ import statistics
 import time
 from typing import Dict, List
 
-from core.cost_model import compute_imbalance, compute_schedule_cost
+from core.cost_model import (
+    compute_average_utilization,
+    compute_imbalance,
+    compute_load_balance_index,
+    compute_schedule_cost,
+)
 from core.dag_generator import generate_random_dag
 from core.dynamic_events import VMFailureEvent, get_affected_task_ids
 from core.heft_engine import (
@@ -80,10 +85,16 @@ def run_static_benchmark(
                 "trial": trial,
                 "heft_makespan": heft_result.makespan(),
                 "heft_cost": compute_schedule_cost(heft_result, dag, vms),
+                "heft_utilization": compute_average_utilization(heft_result, vms),
+                "heft_load_balance": compute_load_balance_index(heft_result, vms),
                 "ls_makespan": ls_result.makespan(),
                 "ls_cost": compute_schedule_cost(ls_result, dag, vms),
+                "ls_utilization": compute_average_utilization(ls_result, vms),
+                "ls_load_balance": compute_load_balance_index(ls_result, vms),
                 "cost_aware_makespan": ca_result.makespan(),
                 "cost_aware_cost": compute_schedule_cost(ca_result, dag, vms),
+                "cost_aware_utilization": compute_average_utilization(ca_result, vms),
+                "cost_aware_load_balance": compute_load_balance_index(ca_result, vms),
             }
         )
 
@@ -97,23 +108,51 @@ def summarize_static_results(results: List[Dict]) -> None:
     def avg(key):
         return statistics.mean(r[key] for r in results)
 
-    print(f"{'Approach':<20}{'Avg Makespan':>15}{'Avg Cost':>15}")
-    print("-" * 50)
-    print(f"{'HEFT only':<20}{avg('heft_makespan'):>15.2f}{avg('heft_cost'):>15.2f}")
-    print(f"{'HEFT + LS':<20}{avg('ls_makespan'):>15.2f}{avg('ls_cost'):>15.2f}")
+    header = (
+        f"{'Approach':<20}{'Avg Makespan':>15}{'Avg Cost':>12}"
+        f"{'Avg Util %':>13}{'Load Bal. Idx':>16}"
+    )
+    print(header)
+    print("-" * len(header))
     print(
-        f"{'HEFT + Cost-ILS':<20}{avg('cost_aware_makespan'):>15.2f}{avg('cost_aware_cost'):>15.2f}"
+        f"{'HEFT only':<20}{avg('heft_makespan'):>15.2f}{avg('heft_cost'):>12.2f}"
+        f"{avg('heft_utilization'):>13.1f}{avg('heft_load_balance'):>16.3f}"
+    )
+    print(
+        f"{'HEFT + LS':<20}{avg('ls_makespan'):>15.2f}{avg('ls_cost'):>12.2f}"
+        f"{avg('ls_utilization'):>13.1f}{avg('ls_load_balance'):>16.3f}"
+    )
+    print(
+        f"{'HEFT + Cost-ILS':<20}{avg('cost_aware_makespan'):>15.2f}{avg('cost_aware_cost'):>12.2f}"
+        f"{avg('cost_aware_utilization'):>13.1f}{avg('cost_aware_load_balance'):>16.3f}"
     )
 
     ls_improvement = (
         (avg("heft_makespan") - avg("ls_makespan")) / avg("heft_makespan") * 100
     )
     cost_savings = (avg("heft_cost") - avg("cost_aware_cost")) / avg("heft_cost") * 100
+    utilization_gain = avg("cost_aware_utilization") - avg("heft_utilization")
+    load_balance_improvement = (
+        (avg("heft_load_balance") - avg("cost_aware_load_balance"))
+        / avg("heft_load_balance")
+        * 100
+        if avg("heft_load_balance") > 0
+        else 0.0
+    )
     print(
         f"\nLocal search improves makespan by {ls_improvement:.1f}% on average vs plain HEFT."
     )
     print(
         f"Cost-aware search reduces cost by {cost_savings:.1f}% on average vs plain HEFT."
+    )
+    print(
+        f"Cost-aware search raises average VM utilization by {utilization_gain:+.1f} "
+        f"percentage points vs plain HEFT (HEFT tends to overload the fastest VMs and "
+        f"leave the rest idle)."
+    )
+    print(
+        f"Cost-aware search improves the load-balance index by {load_balance_improvement:.1f}% "
+        f"vs plain HEFT (lower index = work spread more evenly across the VM pool)."
     )
 
 
@@ -174,6 +213,30 @@ def naive_full_reschedule(dag, vms, schedule, event, current_time) -> Schedule:
     return frozen
 
 
+def _schedule_stability(original: Schedule, repaired: Schedule) -> float:
+    """Percentage of tasks whose (VM, start_time) assignment in `repaired`
+    is IDENTICAL to `original` -- i.e. how much of the pre-disruption plan
+    survives a repair unchanged. A naive full reschedule is free to move
+    almost every task (even ones that had nothing to do with the failure),
+    which is disruptive in practice (cached data, in-flight reservations,
+    operator trust in the plan); selective repair freezes everything
+    outside the affected region by construction, so this should be much
+    higher for selective than for naive.
+    """
+    if not original.assignments:
+        return 100.0
+    unchanged = 0
+    for task_id, orig_a in original.assignments.items():
+        repaired_a = repaired.assignments.get(task_id)
+        if (
+            repaired_a is not None
+            and repaired_a.vm_id == orig_a.vm_id
+            and abs(repaired_a.start_time - orig_a.start_time) < 1e-6
+        ):
+            unchanged += 1
+    return unchanged / len(original.assignments) * 100.0
+
+
 def run_dynamic_benchmark(
     num_trials: int = 15,
     num_tasks: int = 25,
@@ -188,6 +251,8 @@ def run_dynamic_benchmark(
       - resulting makespan (quality check -- selective shouldn't be much worse)
       - number of tasks actually touched (0 for frozen tasks in selective,
         vs potentially everything in naive)
+      - schedule stability (% of tasks whose VM/start-time is unchanged
+        from the pre-disruption plan)
     """
     results = []
 
@@ -236,6 +301,8 @@ def run_dynamic_benchmark(
                 "naive_time_sec": naive_time,
                 "selective_makespan": selective_result.makespan(),
                 "naive_makespan": naive_result.makespan(),
+                "stability_selective": _schedule_stability(schedule, selective_result),
+                "stability_naive": _schedule_stability(schedule, naive_result),
             }
         )
 
@@ -257,6 +324,9 @@ def summarize_dynamic_results(results: List[Dict]) -> None:
     print(
         f"{'Avg resulting makespan':<28}{avg('selective_makespan'):>15.2f}{avg('naive_makespan'):>15.2f}"
     )
+    print(
+        f"{'Avg schedule stability %':<28}{avg('stability_selective'):>15.1f}{avg('stability_naive'):>15.1f}"
+    )
 
     speedup = avg("naive_time_sec") / avg("selective_time_sec")
     makespan_gap = (
@@ -264,10 +334,16 @@ def summarize_dynamic_results(results: List[Dict]) -> None:
         / avg("naive_makespan")
         * 100
     )
+    stability_gain = avg("stability_selective") - avg("stability_naive")
     print(
         f"\nSelective repair is {speedup:.1f}x faster than a full reschedule on average,"
     )
     print(f"with a {makespan_gap:+.1f}% difference in resulting makespan.")
+    print(
+        f"Selective repair also leaves {stability_gain:+.1f} percentage points more of "
+        f"the original plan untouched, avoiding disruptive changes to tasks that had "
+        f"nothing to do with the failure."
+    )
 
 
 if __name__ == "__main__":

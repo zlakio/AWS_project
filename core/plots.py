@@ -2,10 +2,12 @@
 Generates report-ready plots (Days 14-15 territory) from the benchmark
 suite built on Day 9. Run directly: python -m core.plots
 
-Produces three PNGs in the `plots/` folder:
-    1. static_comparison.png     -- HEFT vs LS vs Cost-ILS (makespan & cost)
+Produces four PNGs in the `plots/` folder:
+    1. static_comparison.png     -- HEFT vs LS vs Cost-ILS (makespan, cost,
+                                     VM utilization, load-balance index)
     2. cost_makespan_tradeoff.png -- Pareto-style curve as beta varies
     3. dynamic_comparison.png    -- selective repair vs naive reschedule
+                                     (tasks touched, repair time, stability)
 """
 
 import os
@@ -37,6 +39,7 @@ def _ensure_output_dir():
 
 def plot_static_comparison(results):
     approaches = ["HEFT only", "HEFT + LS", "HEFT + Cost-ILS"]
+    colors = ["#4C72B0", "#55A868", "#C44E52"]
     makespans = [
         statistics.mean(r["heft_makespan"] for r in results),
         statistics.mean(r["ls_makespan"] for r in results),
@@ -47,18 +50,38 @@ def plot_static_comparison(results):
         statistics.mean(r["ls_cost"] for r in results),
         statistics.mean(r["cost_aware_cost"] for r in results),
     ]
+    utilizations = [
+        statistics.mean(r["heft_utilization"] for r in results),
+        statistics.mean(r["ls_utilization"] for r in results),
+        statistics.mean(r["cost_aware_utilization"] for r in results),
+    ]
+    load_balances = [
+        statistics.mean(r["heft_load_balance"] for r in results),
+        statistics.mean(r["ls_load_balance"] for r in results),
+        statistics.mean(r["cost_aware_load_balance"] for r in results),
+    ]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4.5))
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 9))
 
-    ax1.bar(approaches, makespans, color=["#4C72B0", "#55A868", "#C44E52"])
+    ax1.bar(approaches, makespans, color=colors)
     ax1.set_title("Average Makespan")
     ax1.set_ylabel("Makespan (time units)")
     ax1.tick_params(axis="x", rotation=15)
 
-    ax2.bar(approaches, costs, color=["#4C72B0", "#55A868", "#C44E52"])
+    ax2.bar(approaches, costs, color=colors)
     ax2.set_title("Average Cost")
     ax2.set_ylabel("Cost ($)")
     ax2.tick_params(axis="x", rotation=15)
+
+    ax3.bar(approaches, utilizations, color=colors)
+    ax3.set_title("Average VM Utilization")
+    ax3.set_ylabel("Utilization (%)")
+    ax3.tick_params(axis="x", rotation=15)
+
+    ax4.bar(approaches, load_balances, color=colors)
+    ax4.set_title("Load-Balance Index (lower = more even)")
+    ax4.set_ylabel("Coefficient of Variation")
+    ax4.tick_params(axis="x", rotation=15)
 
     fig.suptitle("Static Comparison: HEFT vs Local Search vs Cost-Aware ILS")
     fig.tight_layout()
@@ -147,6 +170,7 @@ def plot_cost_makespan_tradeoff(num_dags: int = 8, betas=None):
 
 def plot_dynamic_comparison(results):
     labels = ["Selective", "Naive (full)"]
+    colors = ["#55A868", "#C44E52"]
     tasks_touched = [
         statistics.mean(r["tasks_touched_selective"] for r in results),
         statistics.mean(r["tasks_touched_naive"] for r in results),
@@ -156,16 +180,25 @@ def plot_dynamic_comparison(results):
         * 1000,  # ms for readability
         statistics.mean(r["naive_time_sec"] for r in results) * 1000,
     ]
+    stability = [
+        statistics.mean(r["stability_selective"] for r in results),
+        statistics.mean(r["stability_naive"] for r in results),
+    ]
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 4.5))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(13, 4.5))
 
-    ax1.bar(labels, tasks_touched, color=["#55A868", "#C44E52"])
+    ax1.bar(labels, tasks_touched, color=colors)
     ax1.set_title("Avg Tasks Touched per Repair")
     ax1.set_ylabel("Number of Tasks")
 
-    ax2.bar(labels, repair_times, color=["#55A868", "#C44E52"])
+    ax2.bar(labels, repair_times, color=colors)
     ax2.set_title("Avg Repair Time")
     ax2.set_ylabel("Time (ms)")
+
+    ax3.bar(labels, stability, color=colors)
+    ax3.set_title("Avg Schedule Stability")
+    ax3.set_ylabel("Unchanged Assignments (%)")
+    ax3.set_ylim(0, 100)
 
     fig.suptitle("Selective Re-optimization vs Naive Full Reschedule")
     fig.tight_layout()

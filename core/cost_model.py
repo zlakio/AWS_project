@@ -70,6 +70,44 @@ def compute_imbalance(schedule: Schedule, vms: List[VM]) -> float:
     return statistics.pstdev(busy_times)
 
 
+def compute_average_utilization(schedule: Schedule, vms: List[VM]) -> float:
+    """Average, across all VMs, of (busy_time / makespan) -- i.e. what
+    fraction of the schedule's total wall-clock time each VM actually
+    spends doing work, expressed as a percentage.
+
+    Classical HEFT always picks the fastest available machine for a task,
+    which tends to pile work onto a few fast VMs while others sit mostly
+    idle: good makespan, poor utilization of the pool you're paying for.
+    This is a scale-free way to show that a cost-/balance-aware schedule
+    uses the whole VM pool more effectively, not just that it costs less.
+    """
+    makespan = schedule.makespan()
+    if makespan <= 0 or not vms:
+        return 0.0
+    busy_times = compute_vm_busy_times(schedule, vms)
+    utilizations = [busy / makespan for busy in busy_times.values()]
+    return statistics.mean(utilizations) * 100.0
+
+
+def compute_load_balance_index(schedule: Schedule, vms: List[VM]) -> float:
+    """Coefficient of variation (stdev / mean) of per-VM busy time.
+
+    Unlike compute_imbalance() -- a raw stdev in time units, which isn't
+    comparable across DAGs/VM pools of different scale -- this is
+    dimensionless: 0.0 means perfectly balanced load across every VM, and
+    it grows the more lopsided the distribution is, regardless of how big
+    the workload happens to be. That makes it usable for averaging across
+    many random trials of different sizes, which raw imbalance is not.
+    """
+    busy_times = list(compute_vm_busy_times(schedule, vms).values())
+    if len(busy_times) < 2:
+        return 0.0
+    mean_busy = statistics.mean(busy_times)
+    if mean_busy <= 0:
+        return 0.0
+    return statistics.pstdev(busy_times) / mean_busy
+
+
 # ---------------------------------------------------------------------------
 # Normalization + combined score
 # ---------------------------------------------------------------------------

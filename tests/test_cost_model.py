@@ -15,7 +15,9 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from core.cost_model import (
+    compute_average_utilization,
     compute_imbalance,
+    compute_load_balance_index,
     compute_schedule_cost,
     compute_vm_busy_times,
 )
@@ -41,6 +43,35 @@ def test_cost_and_imbalance_are_sane():
     assert cost > 0, "Cost should be positive for any non-empty schedule"
     assert imbalance >= 0, "Imbalance (a stdev) can never be negative"
     print("Cost model sanity checks passed.\n")
+
+
+def test_utilization_and_load_balance_are_sane():
+    dag = generate_random_dag(num_tasks=10, num_levels=4, edge_probability=0.4, seed=5)
+    vms = generate_vm_pool(num_vms=3, seed=5)
+    schedule = heft_schedule(dag, vms)
+
+    utilization = compute_average_utilization(schedule, vms)
+    load_balance = compute_load_balance_index(schedule, vms)
+
+    print(f"Average utilization: {utilization:.1f}%")
+    print(f"Load balance index (coefficient of variation): {load_balance:.3f}")
+
+    assert 0.0 <= utilization <= 100.0, "Utilization is a percentage of makespan"
+    assert load_balance >= 0.0, (
+        "Load balance index (a coefficient of variation) can never be negative"
+    )
+
+    # A schedule with everything piled onto one VM should have a strictly
+    # worse (higher) load-balance index than one spread across the pool.
+    lopsided = schedule.copy()
+    busy_vm_id = next(iter(compute_vm_busy_times(schedule, vms)))
+    for assignment in lopsided.assignments.values():
+        assignment.vm_id = busy_vm_id
+    lopsided_balance = compute_load_balance_index(lopsided, vms)
+    assert lopsided_balance >= load_balance, (
+        "Piling every task onto a single VM should not improve load balance"
+    )
+    print("Utilization / load-balance sanity checks passed.\n")
 
 
 def test_cost_aware_vs_makespan_only():
@@ -99,5 +130,6 @@ def test_cost_aware_vs_makespan_only():
 
 if __name__ == "__main__":
     test_cost_and_imbalance_are_sane()
+    test_utilization_and_load_balance_are_sane()
     test_cost_aware_vs_makespan_only()
     print("All Day 5-6 checks passed.")
