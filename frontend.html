@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DCA-HEFT-ILS Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F1318; --panel: #171D24; --panel-raised: #1C232C;
+    --border: #2A323C; --text: #E8ECF1; --muted: #8792A0;
+    --heft: #5B8DEF; --cost: #E8A33D; --good: #4FD1A5;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #F3F4F6; --panel: #FFFFFF; --panel-raised: #F9FAFB;
+      --border: #DCE0E5; --text: #1A1F27; --muted: #62697A;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 64px; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .mono { font-family: "IBM Plex Mono", monospace; }
+
+  .toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 3px; margin-top: 18px; background: var(--panel); }
+  .toggle button {
+    border: none; background: transparent; color: var(--muted); font: inherit; font-weight: 600;
+    font-size: 13px; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .toggle button.active.heft { background: var(--heft); color: #0F1318; }
+  .toggle button.active.cost { background: var(--cost); color: #0F1318; }
+
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 24px 0 28px; }
+  .metric { background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent, var(--heft)); border-radius: 4px; padding: 14px 16px; }
+  .metric .label { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .metric .value { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; }
+  .metric .delta { font-size: 12px; margin-top: 4px; color: var(--muted); }
+  .metric .delta.up { color: #E8756A; }
+  .metric .delta.down { color: var(--good); }
+
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 12px; }
+  .gantt { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px; margin-bottom: 28px; overflow-x: auto; }
+  .row { display: flex; align-items: center; height: 34px; }
+  .row-label { width: 52px; flex-shrink: 0; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); }
+  .track { position: relative; flex: 1; height: 22px; background: var(--panel-raised); border-radius: 3px; min-width: 480px; }
+  .bar {
+    position: absolute; top: 1px; bottom: 1px; border-radius: 3px; background: var(--accent, var(--heft));
+    display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace;
+    font-size: 10px; color: #0F1318; font-weight: 600; overflow: hidden; opacity: 0.92;
+  }
+
+  .tradeoff { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px; }
+  .tradeoff .note { color: var(--muted); font-size: 12px; margin: 10px 0 0; line-height: 1.5; }
+  svg text { fill: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 10px; }
+
+  @media (max-width: 640px) {
+    .metrics { grid-template-columns: 1fr; }
+    .wrap { padding: 24px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DCA-HEFT-ILS Scheduler</h1>
+    <p class="sub">Dynamic Cost-Aware HEFT scheduling &mdash; 14 tasks across 4 VMs</p>
+    <div class="toggle" role="tablist" aria-label="Schedule view">
+      <button id="btn-heft" class="active heft" onclick="setView('heft')">HEFT (baseline)</button>
+      <button id="btn-cost" onclick="setView('cost_aware')">Cost-Aware ILS</button>
+    </div>
+  </header>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div class="gantt">
+    <p class="panel-title">VM Timeline</p>
+    <div id="rows"></div>
+  </div>
+
+  <div class="tradeoff">
+    <p class="panel-title">Cost &ndash; Makespan Trade-off (as cost weight &beta; increases)</p>
+    <svg viewBox="0 0 640 220" width="100%" style="max-width:640px;display:block">
+      <g id="tradeoff-svg"></g>
+    </svg>
+    <p class="note">Aggregate result across multiple random DAGs, sweeping &beta; from 0 (pure makespan) to 0.95 (cost-focused). The schedules shown above use a fixed &beta;=0.7 configuration.</p>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  vms: [{"id": 0, "speed": 4.2, "cost_per_hour": 1.8}, {"id": 1, "speed": 2.38, "cost_per_hour": 1.09}, {"id": 2, "speed": 4.68, "cost_per_hour": 2.46}, {"id": 3, "speed": 5.46, "cost_per_hour": 2.39}],
+  heft: {"tasks": [{"id": 0, "vm": 0, "start": 0.0, "end": 15.05, "cost": 27.08}, {"id": 1, "vm": 1, "start": 10.26, "end": 15.68, "cost": 5.9}, {"id": 2, "vm": 3, "start": 35.62, "end": 39.0, "cost": 8.07}, {"id": 3, "vm": 3, "start": 51.35, "end": 57.01, "cost": 13.55}, {"id": 4, "vm": 3, "start": 57.01, "end": 68.76, "cost": 28.11}, {"id": 5, "vm": 2, "start": 0.0, "end": 12.92, "cost": 31.86}, {"id": 6, "vm": 2, "start": 12.92, "end": 28.82, "cost": 39.19}, {"id": 7, "vm": 2, "start": 39.02, "end": 54.64, "cost": 38.5}, {"id": 8, "vm": 2, "start": 28.82, "end": 39.02, "cost": 25.14}, {"id": 9, "vm": 0, "start": 17.58, "end": 29.59, "cost": 21.63}, {"id": 10, "vm": 3, "start": 26.49, "end": 32.9, "cost": 15.35}, {"id": 11, "vm": 3, "start": 0.0, "end": 16.16, "cost": 38.65}, {"id": 12, "vm": 2, "start": 54.64, "end": 71.36, "cost": 41.22}, {"id": 13, "vm": 1, "start": 0.0, "end": 10.26, "cost": 11.17}], "makespan": 71.36, "cost": 345.42, "imbalance": 20.93},
+  cost_aware: {"tasks": [{"id": 0, "vm": 0, "start": 0.0, "end": 15.05, "cost": 27.08}, {"id": 1, "vm": 1, "start": 10.26, "end": 15.68, "cost": 5.9}, {"id": 2, "vm": 3, "start": 35.62, "end": 39.0, "cost": 8.07}, {"id": 3, "vm": 3, "start": 51.35, "end": 57.01, "cost": 13.55}, {"id": 4, "vm": 3, "start": 57.01, "end": 68.76, "cost": 28.11}, {"id": 5, "vm": 2, "start": 0.0, "end": 12.92, "cost": 31.86}, {"id": 6, "vm": 2, "start": 12.92, "end": 28.82, "cost": 39.19}, {"id": 7, "vm": 0, "start": 41.89, "end": 59.31, "cost": 31.36}, {"id": 8, "vm": 3, "start": 39.0, "end": 47.75, "cost": 20.92}, {"id": 9, "vm": 0, "start": 17.58, "end": 29.59, "cost": 21.63}, {"id": 10, "vm": 3, "start": 26.49, "end": 32.9, "cost": 15.35}, {"id": 11, "vm": 3, "start": 0.0, "end": 16.16, "cost": 38.65}, {"id": 12, "vm": 0, "start": 59.31, "end": 77.96, "cost": 33.58}, {"id": 13, "vm": 1, "start": 0.0, "end": 10.26, "cost": 11.17}], "makespan": 77.96, "cost": 326.42, "imbalance": 18.7},
+  tradeoff: [{"beta":0.00,"makespan":79.76,"cost":517.23},{"beta":0.20,"makespan":78.79,"cost":512.28},{"beta":0.40,"makespan":83.44,"cost":508.63},{"beta":0.60,"makespan":98.28,"cost":501.32},{"beta":0.80,"makespan":143.16,"cost":495.60},{"beta":0.95,"makespan":166.68,"cost":493.71}]
+};
+
+const scaleMax = Math.max(DATA.heft.makespan, DATA.cost_aware.makespan) * 1.06;
+
+function fmt(n) { return n.toFixed(2); }
+
+function render(view) {
+  const d = DATA[view];
+  const accent = view === "heft" ? "var(--heft)" : "var(--cost)";
+  const other = view === "heft" ? DATA.cost_aware : DATA.heft;
+
+  const deltaMs = d.makespan - other.makespan;
+  const deltaCost = d.cost - other.cost;
+  const deltaImb = d.imbalance - other.imbalance;
+
+  document.getElementById("metrics").innerHTML = `
+    <div class="metric" style="--accent:${accent}">
+      <div class="label">Makespan</div>
+      <div class="value">${fmt(d.makespan)}</div>
+      <div class="delta ${deltaMs>0?'up':deltaMs<0?'down':''}">${deltaMs===0?'&mdash;':(deltaMs>0?'+':'')+fmt(deltaMs)+' vs other'}</div>
+    </div>
+    <div class="metric" style="--accent:${accent}">
+      <div class="label">Cost ($)</div>
+      <div class="value">${fmt(d.cost)}</div>
+      <div class="delta ${deltaCost>0?'up':deltaCost<0?'down':''}">${deltaCost===0?'&mdash;':(deltaCost>0?'+':'')+fmt(deltaCost)+' vs other'}</div>
+    </div>
+    <div class="metric" style="--accent:${accent}">
+      <div class="label">Imbalance (stdev)</div>
+      <div class="value">${fmt(d.imbalance)}</div>
+      <div class="delta ${deltaImb>0?'up':deltaImb<0?'down':''}">${deltaImb===0?'&mdash;':(deltaImb>0?'+':'')+fmt(deltaImb)+' vs other'}</div>
+    </div>`;
+
+  const rowsHtml = DATA.vms.map(vm => {
+    const tasks = d.tasks.filter(t => t.vm === vm.id);
+    const bars = tasks.map(t => {
+      const left = (t.start / scaleMax) * 100;
+      const width = ((t.end - t.start) / scaleMax) * 100;
+      return `<div class="bar" style="left:${left}%;width:${width}%;--accent:${accent}" title="Task ${t.id} &middot; ${fmt(t.start)}&ndash;${fmt(t.end)} &middot; $${fmt(t.cost)}">T${t.id}</div>`;
+    }).join("");
+    return `<div class="row"><div class="row-label">VM ${vm.id}</div><div class="track">${bars}</div></div>`;
+  }).join("");
+  document.getElementById("rows").innerHTML = rowsHtml;
+
+  document.getElementById("btn-heft").classList.toggle("active", view === "heft");
+  document.getElementById("btn-cost").classList.toggle("active", view === "cost_aware");
+}
+
+function setView(view) { render(view); }
+
+function renderTradeoff() {
+  const pts = DATA.tradeoff;
+  const minMs = Math.min(...pts.map(p=>p.makespan)), maxMs = Math.max(...pts.map(p=>p.makespan));
+  const minC = Math.min(...pts.map(p=>p.cost)), maxC = Math.max(...pts.map(p=>p.cost));
+  const padL = 50, padR = 20, padT = 16, padB = 30, w = 640-padL-padR, h = 220-padT-padB;
+  const x = ms => padL + ((ms-minMs)/(maxMs-minMs))*w;
+  const y = c => padT + (1-(c-minC)/(maxC-minC))*h;
+
+  const line = pts.map(p=>`${x(p.makespan)},${y(p.cost)}`).join(" ");
+  const dots = pts.map(p=>`<circle cx="${x(p.makespan)}" cy="${y(p.cost)}" r="4" fill="var(--cost)"/><text x="${x(p.makespan)+7}" y="${y(p.cost)-7}">&beta;=${p.beta.toFixed(2)}</text>`).join("");
+
+  document.getElementById("tradeoff-svg").innerHTML = `
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+h}" stroke="var(--border)"/>
+    <line x1="${padL}" y1="${padT+h}" x2="${padL+w}" y2="${padT+h}" stroke="var(--border)"/>
+    <text x="${padL-8}" y="${padT+4}" text-anchor="end">$${maxC.toFixed(0)}</text>
+    <text x="${padL-8}" y="${padT+h+4}" text-anchor="end">$${minC.toFixed(0)}</text>
+    <text x="${padL}" y="${padT+h+20}">${minMs.toFixed(0)}</text>
+    <text x="${padL+w}" y="${padT+h+20}" text-anchor="end">${maxMs.toFixed(0)}</text>
+    <polyline points="${line}" fill="none" stroke="var(--cost)" stroke-width="2"/>
+    ${dots}`;
+}
+
+render("heft");
+renderTradeoff();
+</script>
+</body>
+</html>
