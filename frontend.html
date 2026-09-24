@@ -7,177 +7,781 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ================= TOKENS ================= */
   :root {
-    --bg: #0F1318; --panel: #171D24; --panel-raised: #1C232C;
-    --border: #2A323C; --text: #E8ECF1; --muted: #8792A0;
-    --heft: #5B8DEF; --cost: #E8A33D; --good: #4FD1A5;
+    /* dark is the primary surface -- see @media block below for how it's built up */
+    --bg: #14120E; --panel: #1D1A15; --panel-raised: #24201A; --panel-sunken: #100E0B;
+    --border: #322C22; --border-strong: #453D2F;
+    --text: #F2EFE7; --text-secondary: #C7C2B4; --muted: #8F8A7B;
+    --accent: #5B8DEF; --accent-ink: #0E0D0B;
+    --good: #4FD1A5; --bad: #E8756A;
+
+    /* method identity colors -- categorical, distinct from --accent (UI) */
+    --m-heft: #5B8DEF;   /* classical baseline */
+    --m-ls:   #3FB8AE;   /* plain local search */
+    --m-cost: #E8A33D;   /* cost-aware iterated local search */
+    --m-selective: #4FD1A5;
+    --m-naive:     #E8756A;
+
     color-scheme: dark;
+
+    --fs-display: 28px; --fs-heading: 22px; --fs-section: 13px; --fs-title: 14px;
+    --fs-body: 14px; --fs-secondary: 13px; --fs-caption: 12px; --fs-label: 11px; --fs-mono: 13px;
+
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+    --sp-6:24px; --sp-7:32px; --sp-8:40px; --sp-9:48px; --sp-10:64px;
+
+    --radius-sm: 4px; --radius-md: 6px;
+    --ease: cubic-bezier(.4,0,.2,1);
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
-      --bg: #F3F4F6; --panel: #FFFFFF; --panel-raised: #F9FAFB;
-      --border: #DCE0E5; --text: #1A1F27; --muted: #62697A;
+      --bg: #F5F4F1; --panel: #FFFFFF; --panel-raised: #FBFAF7; --panel-sunken: #ECEAE4;
+      --border: #E1DDD3; --border-strong: #CFC9BB;
+      --text: #1C1A15; --text-secondary: #524C3F; --muted: #7A7566;
+      --accent: #2E6BD6; --accent-ink: #FFFFFF;
+      --good: #1F9C79; --bad: #C94A3F;
+      --m-heft: #2E6BD6; --m-ls: #1E8F86; --m-cost: #C97C1B;
+      --m-selective: #1F9C79; --m-naive: #C94A3F;
       color-scheme: light;
     }
   }
   :root[data-theme="dark"] { color-scheme: dark; }
+
   * { box-sizing: border-box; }
-  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html { scroll-padding-top: 64px; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
     font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-size: var(--fs-body); line-height: 1.55;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 64px; }
-  header { margin-bottom: 28px; }
-  h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); font-size: 14px; margin: 0; }
-  .mono { font-family: "IBM Plex Mono", monospace; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  h1, h2, h3, p { margin: 0; }
+  a { color: inherit; }
 
-  .toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; padding: 3px; margin-top: 18px; background: var(--panel); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: var(--sp-8) var(--sp-5) var(--sp-10); }
+  @media (max-width: 640px) { .wrap { padding: var(--sp-6) var(--sp-4) var(--sp-9); } }
+
+  /* ================= HEADER ================= */
+  header.page-head { margin-bottom: var(--sp-6); }
+  .eyebrow {
+    font-size: var(--fs-label); font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--muted); display: block; margin-bottom: var(--sp-2);
+  }
+  h1 { font-size: var(--fs-heading); font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: var(--fs-secondary); margin: 0; max-width: 62ch; }
+
+  /* in-page nav */
+  nav.subnav {
+    display: flex; gap: var(--sp-5); margin-top: var(--sp-5);
+    border-bottom: 1px solid var(--border); overflow-x: auto;
+  }
+  nav.subnav a {
+    text-decoration: none; font-size: var(--fs-secondary); font-weight: 600;
+    color: var(--muted); padding: var(--sp-2) 0 var(--sp-3); white-space: nowrap;
+    border-bottom: 2px solid transparent; transition: color .12s var(--ease), border-color .12s var(--ease);
+  }
+  nav.subnav a:hover, nav.subnav a:focus-visible { color: var(--text); }
+  nav.subnav a.current { color: var(--text); border-bottom-color: var(--accent); }
+
+  /* ================= TOGGLE ================= */
+  .toggle {
+    display: inline-flex; border: 1px solid var(--border); border-radius: 8px;
+    padding: 3px; margin-top: var(--sp-5); background: var(--panel); flex-wrap: wrap;
+  }
   .toggle button {
     border: none; background: transparent; color: var(--muted); font: inherit; font-weight: 600;
-    font-size: 13px; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: background .15s, color .15s;
+    font-size: var(--fs-secondary); padding: var(--sp-2) var(--sp-4); border-radius: 6px; cursor: pointer;
+    transition: background .15s var(--ease), color .15s var(--ease);
   }
-  .toggle button.active.heft { background: var(--heft); color: #0F1318; }
-  .toggle button.active.cost { background: var(--cost); color: #0F1318; }
+  .toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .toggle button.active { color: var(--accent-ink); }
+  .toggle button.active[data-m="heft"] { background: var(--m-heft); }
+  .toggle button.active[data-m="ls"] { background: var(--m-ls); }
+  .toggle button.active[data-m="cost_aware"] { background: var(--m-cost); }
 
-  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 24px 0 28px; }
-  .metric { background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent, var(--heft)); border-radius: 4px; padding: 14px 16px; }
-  .metric .label { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
-  .metric .value { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; }
-  .metric .delta { font-size: 12px; margin-top: 4px; color: var(--muted); }
-  .metric .delta.up { color: #E8756A; }
+  /* ================= SECTIONS ================= */
+  section.block { margin-top: var(--sp-9); scroll-margin-top: 72px; }
+  .block-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-wrap: wrap; gap: var(--sp-3); margin-bottom: var(--sp-4);
+  }
+  h2.section-title { font-size: 16px; font-weight: 700; letter-spacing: -0.005em; }
+  .section-note { font-size: var(--fs-secondary); color: var(--muted); margin-top: 2px; max-width: 64ch; }
+  .panel-title {
+    font-size: var(--fs-label); font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 var(--sp-3);
+  }
+
+  /* ================= METRIC TILES ================= */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); margin: var(--sp-5) 0 var(--sp-6); }
+  @media (max-width: 760px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+  .metric {
+    background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--m-accent, var(--accent));
+    border-radius: var(--radius-sm); padding: var(--sp-4);
+  }
+  .metric .label { color: var(--muted); font-size: var(--fs-label); text-transform: uppercase; letter-spacing: .04em; margin-bottom: var(--sp-2); }
+  .metric .value { font-family: "IBM Plex Mono", monospace; font-size: var(--fs-display); font-weight: 600; }
+  .metric .delta { font-size: var(--fs-caption); margin-top: var(--sp-1); color: var(--muted); }
+  .metric .delta.up { color: var(--bad); }
   .metric .delta.down { color: var(--good); }
 
-  .panel-title { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0 0 12px; }
-  .gantt { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px; margin-bottom: 28px; overflow-x: auto; }
+  /* ================= GANTT ================= */
+  .gantt { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-5); overflow-x: auto; }
   .row { display: flex; align-items: center; height: 34px; }
-  .row-label { width: 52px; flex-shrink: 0; font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); }
-  .track { position: relative; flex: 1; height: 22px; background: var(--panel-raised); border-radius: 3px; min-width: 480px; }
+  .row-label { width: 52px; flex-shrink: 0; font-family: "IBM Plex Mono", monospace; font-size: var(--fs-caption); color: var(--muted); }
+  .track { position: relative; flex: 1; height: 22px; background: var(--panel-sunken); border-radius: 3px; min-width: 480px; }
   .bar {
-    position: absolute; top: 1px; bottom: 1px; border-radius: 3px; background: var(--accent, var(--heft));
+    position: absolute; top: 1px; bottom: 1px; border-radius: 3px; background: var(--m-accent, var(--m-heft));
     display: flex; align-items: center; justify-content: center; font-family: "IBM Plex Mono", monospace;
-    font-size: 10px; color: #0F1318; font-weight: 600; overflow: hidden; opacity: 0.92;
+    font-size: 10px; color: var(--accent-ink); font-weight: 600; overflow: hidden; opacity: .92;
   }
 
-  .tradeoff { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 18px; }
-  .tradeoff .note { color: var(--muted); font-size: 12px; margin: 10px 0 0; line-height: 1.5; }
-  svg text { fill: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 10px; }
-
-  @media (max-width: 640px) {
-    .metrics { grid-template-columns: 1fr; }
-    .wrap { padding: 24px 16px 48px; }
+  /* ================= CARDS / GRID ================= */
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--sp-5);
   }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--sp-5); margin-bottom: var(--sp-4); }
+  .legend .item { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-secondary); color: var(--text-secondary); }
+  .legend .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .chart-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
+  @media (max-width: 860px) { .chart-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .chart-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: var(--sp-4) var(--sp-4) var(--sp-3); display: flex; flex-direction: column;
+  }
+  .chart-card .chart-title { font-size: var(--fs-title); font-weight: 600; margin-bottom: 2px; }
+  .chart-card .chart-unit { font-size: var(--fs-caption); color: var(--muted); margin-bottom: var(--sp-3); }
+  .chart-card svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart-card svg text { font-family: "IBM Plex Mono", monospace; }
+  .chart-card svg text.cat-label { font-family: Inter, sans-serif; }
+
+  .bar-mark { cursor: pointer; transition: opacity .1s var(--ease); }
+  .bar-mark:hover, .bar-mark:focus { opacity: .8; }
+  .bar-mark:focus { outline: none; }
+
+  .table-toggle {
+    font-family: inherit; font-size: var(--fs-caption); font-weight: 600; color: var(--text-secondary);
+    background: transparent; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    padding: var(--sp-2) var(--sp-3); cursor: pointer; white-space: nowrap;
+    transition: background .12s var(--ease), color .12s var(--ease), border-color .12s var(--ease);
+  }
+  .table-toggle:hover { border-color: var(--accent); color: var(--text); }
+  .table-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .table-toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  .data-table-wrap { margin-top: var(--sp-4); overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: var(--fs-secondary); min-width: 460px; }
+  table.data-table caption { text-align: left; padding: var(--sp-3) var(--sp-4) 0; font-size: var(--fs-caption); color: var(--muted); }
+  table.data-table th, table.data-table td {
+    text-align: right; padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border);
+    font-family: "IBM Plex Mono", monospace; white-space: nowrap;
+  }
+  table.data-table th:first-child, table.data-table td:first-child { text-align: left; font-family: Inter, sans-serif; font-weight: 500; }
+  table.data-table thead th {
+    color: var(--muted); font-weight: 600; font-size: var(--fs-caption); text-transform: uppercase;
+    letter-spacing: .03em; background: var(--panel-raised);
+  }
+  table.data-table tbody tr:last-child td { border-bottom: none; }
+
+  /* cost feature layout */
+  .feature-layout { display: grid; grid-template-columns: 1.25fr 1fr; gap: var(--sp-7); align-items: center; }
+  @media (max-width: 780px) { .feature-layout { grid-template-columns: 1fr; } }
+  .feature-aside { display: flex; flex-direction: column; gap: var(--sp-5); }
+  .callout { border-top: 1px solid var(--border); padding-top: var(--sp-4); }
+  .callout .num { font-family: "IBM Plex Mono", monospace; font-size: 30px; font-weight: 600; color: var(--good); }
+  .callout .cap { font-size: var(--fs-secondary); color: var(--text-secondary); margin-top: var(--sp-1); }
+
+  .caveat {
+    font-size: var(--fs-caption); color: var(--muted); border-left: 2px solid var(--border-strong);
+    padding-left: var(--sp-3); line-height: 1.6; margin-top: var(--sp-4);
+  }
+
+  .tradeoff .note { color: var(--muted); font-size: var(--fs-caption); margin: var(--sp-3) 0 0; line-height: 1.5; }
+  svg .grid-text { fill: var(--muted); font-family: "IBM Plex Mono", monospace; font-size: 10px; }
+
+  /* tooltip */
+  .viz-tooltip {
+    position: fixed; pointer-events: none; background: var(--text); color: var(--bg);
+    font-family: "IBM Plex Mono", monospace; font-size: var(--fs-caption); padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--radius-sm); z-index: 50; opacity: 0; transform: translate(-50%, calc(-100% - 10px));
+    transition: opacity .08s var(--ease); white-space: nowrap;
+  }
+  .viz-tooltip.visible { opacity: 1; }
+  .viz-tooltip .tt-m { display: block; font-family: Inter, sans-serif; font-weight: 600; margin-bottom: 2px; }
+
+  footer.page-foot { border-top: 1px solid var(--border); margin-top: var(--sp-10); padding-top: var(--sp-5); }
+  footer.page-foot p { font-size: var(--fs-caption); color: var(--muted); line-height: 1.6; max-width: 78ch; }
+
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
+
+  <header class="page-head">
+    <span class="eyebrow">DCA-HEFT-ILS &middot; Cloud Workflow Scheduler</span>
     <h1>DCA-HEFT-ILS Scheduler</h1>
-    <p class="sub">Dynamic Cost-Aware HEFT scheduling &mdash; 14 tasks across 4 VMs</p>
-    <div class="toggle" role="tablist" aria-label="Schedule view">
-      <button id="btn-heft" class="active heft" onclick="setView('heft')">HEFT (baseline)</button>
-      <button id="btn-cost" onclick="setView('cost_aware')">Cost-Aware ILS</button>
+    <p class="sub">Dynamic Cost-Aware HEFT scheduling with selective re-optimization &mdash; 14 tasks across 4 VMs, plus benchmark results averaged across 30 (static) and 20 (dynamic) random trials.</p>
+
+    <nav class="subnav" aria-label="Page sections">
+      <a href="#overview" class="current">Overview</a>
+      <a href="#compare">Compare methods</a>
+      <a href="#cost">Cost</a>
+      <a href="#dynamic">Dynamic repair</a>
+    </nav>
+
+    <div class="toggle" role="tablist" aria-label="Schedule view" id="view-toggle">
+      <button id="btn-heft" class="active" data-m="heft" data-view="heft" role="tab" aria-selected="true">HEFT (baseline)</button>
+      <button id="btn-ls" data-m="ls" data-view="ls" role="tab" aria-selected="false">HEFT + LS</button>
+      <button id="btn-cost" data-m="cost_aware" data-view="cost_aware" role="tab" aria-selected="false">Cost-Aware ILS</button>
     </div>
   </header>
 
-  <div class="metrics" id="metrics"></div>
+  <!-- ===================== OVERVIEW: tiles + gantt for the selected method ===================== -->
+  <section id="overview">
+    <div class="metrics" id="metrics"></div>
 
-  <div class="gantt">
-    <p class="panel-title">VM Timeline</p>
-    <div id="rows"></div>
-  </div>
+    <div class="gantt">
+      <p class="panel-title">VM Timeline &mdash; one example workflow, selected method</p>
+      <div id="rows"></div>
+    </div>
+  </section>
 
-  <div class="tradeoff">
-    <p class="panel-title">Cost &ndash; Makespan Trade-off (as cost weight &beta; increases)</p>
-    <svg viewBox="0 0 640 220" width="100%" style="max-width:640px;display:block">
-      <g id="tradeoff-svg"></g>
-    </svg>
-    <p class="note">Aggregate result across multiple random DAGs, sweeping &beta; from 0 (pure makespan) to 0.95 (cost-focused). The schedules shown above use a fixed &beta;=0.7 configuration.</p>
-  </div>
+  <!-- ===================== COMPARE: all three methods, averaged ===================== -->
+  <section class="block" id="compare" aria-labelledby="compare-heading">
+    <div class="block-head">
+      <div>
+        <h2 class="section-title" id="compare-heading">All methods compared</h2>
+        <p class="section-note">Averaged across 30 independent random workflow/VM-pool trials &mdash; not the single example above, which is one instance and can differ from the trend.</p>
+      </div>
+      <button class="table-toggle" id="toggle-static" aria-pressed="false" aria-controls="static-table">Show as table</button>
+    </div>
+
+    <div class="legend" id="legend-static"></div>
+    <div class="chart-grid" id="grid-static"></div>
+    <div class="data-table-wrap" id="static-table" hidden></div>
+
+    <p class="caveat">Plain local search found no measurable improvement over HEFT in this benchmark (makespan and cost are effectively identical) &mdash; it gets stuck at a local optimum with no single-mutation improvement available. That is the motivation for the cost-aware search using iterated (perturbation-based) local search rather than one greedy pass.</p>
+  </section>
+
+  <!-- ===================== COST ===================== -->
+  <section class="block" id="cost" aria-labelledby="cost-heading">
+    <div class="block-head">
+      <div>
+        <h2 class="section-title" id="cost-heading">Cost across the three methods</h2>
+        <p class="section-note">Total schedule cost = each task's execution time on its assigned VM &times; that VM's hourly rate, summed across the workflow.</p>
+      </div>
+      <button class="table-toggle" id="toggle-cost" aria-pressed="false" aria-controls="cost-table">Show as table</button>
+    </div>
+
+    <div class="card">
+      <div class="feature-layout">
+        <div>
+          <div class="legend" id="legend-cost"></div>
+          <svg id="chart-cost" viewBox="0 0 520 280" role="img" aria-label="Average schedule cost by method"></svg>
+        </div>
+        <div class="feature-aside">
+          <div class="callout">
+            <div class="num" id="cost-savings-num">&ndash;1.7%</div>
+            <p class="cap">lower average cost with the cost-aware search versus plain HEFT, holding hourly VM rates fixed.</p>
+          </div>
+          <p class="caveat" style="margin-top:0;">That saving comes with a trade-off: makespan runs about 4.3% higher than plain HEFT at this weighting. The chart below shows &beta; (the cost weight) is a dial, not a fixed point &mdash; sweeping it from 0 to 0.95 traces a continuous cost/makespan curve.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="data-table-wrap" id="cost-table" hidden></div>
+
+    <div class="card tradeoff" style="margin-top: var(--sp-4);">
+      <p class="panel-title">Cost &ndash; makespan trade-off as cost weight &beta; increases</p>
+      <svg viewBox="0 0 640 220" width="100%" style="max-width:640px;display:block">
+        <g id="tradeoff-svg"></g>
+      </svg>
+      <p class="note">Aggregate result across 8 fixed random DAGs, sweeping &beta; from 0 (pure makespan) to 0.95 (cost-focused). The schedules shown above use a fixed &beta;=0.3 configuration.</p>
+    </div>
+  </section>
+
+  <!-- ===================== DYNAMIC ===================== -->
+  <section class="block" id="dynamic" aria-labelledby="dynamic-heading">
+    <div class="block-head">
+      <div>
+        <h2 class="section-title" id="dynamic-heading">Dynamic repair: selective vs. naive</h2>
+        <p class="section-note">A random VM fails partway through each of 20 running schedules. Selective re-optimization repairs only the affected tasks and their downstream dependents; the naive baseline reschedules every unfinished task from scratch with plain HEFT.</p>
+      </div>
+      <button class="table-toggle" id="toggle-dynamic" aria-pressed="false" aria-controls="dynamic-table">Show as table</button>
+    </div>
+
+    <div class="legend" id="legend-dynamic"></div>
+    <div class="chart-grid" id="grid-dynamic"></div>
+    <div class="data-table-wrap" id="dynamic-table" hidden></div>
+
+    <p class="caveat">Selective repair reaches a resulting makespan within 0.4% of the naive full reschedule &mdash; the speed and stability gains are not paid for with worse schedule quality.</p>
+  </section>
+
+  <footer class="page-foot">
+    <p><b style="color:var(--text-secondary)">Methodology.</b> Gantt example: 14 tasks, 5 DAG levels, 4 VMs, seed 23, &alpha;=0.55 &beta;=0.3 &gamma;=0.15. Static benchmark: 20 tasks, 6 DAG levels, 5 VMs, 500 local-search iterations, seeds 1000&ndash;1029. Dynamic benchmark: 25 tasks, 7 DAG levels, 6 VMs, VM failure injected at 40% of the original makespan, seeds 2000&ndash;2019. All averaged figures are computed by <span class="mono">core/benchmark.py</span> in the DCA-HEFT-ILS repository. VM pricing and disruptions are simulated, not measured from a live cloud.</p>
+  </footer>
+
 </div>
 
+<div class="viz-tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
 <script>
-const DATA = {
-  vms: [{"id": 0, "speed": 4.2, "cost_per_hour": 1.8}, {"id": 1, "speed": 2.38, "cost_per_hour": 1.09}, {"id": 2, "speed": 4.68, "cost_per_hour": 2.46}, {"id": 3, "speed": 5.46, "cost_per_hour": 2.39}],
-  heft: {"tasks": [{"id": 0, "vm": 0, "start": 0.0, "end": 15.05, "cost": 27.08}, {"id": 1, "vm": 1, "start": 10.26, "end": 15.68, "cost": 5.9}, {"id": 2, "vm": 3, "start": 35.62, "end": 39.0, "cost": 8.07}, {"id": 3, "vm": 3, "start": 51.35, "end": 57.01, "cost": 13.55}, {"id": 4, "vm": 3, "start": 57.01, "end": 68.76, "cost": 28.11}, {"id": 5, "vm": 2, "start": 0.0, "end": 12.92, "cost": 31.86}, {"id": 6, "vm": 2, "start": 12.92, "end": 28.82, "cost": 39.19}, {"id": 7, "vm": 2, "start": 39.02, "end": 54.64, "cost": 38.5}, {"id": 8, "vm": 2, "start": 28.82, "end": 39.02, "cost": 25.14}, {"id": 9, "vm": 0, "start": 17.58, "end": 29.59, "cost": 21.63}, {"id": 10, "vm": 3, "start": 26.49, "end": 32.9, "cost": 15.35}, {"id": 11, "vm": 3, "start": 0.0, "end": 16.16, "cost": 38.65}, {"id": 12, "vm": 2, "start": 54.64, "end": 71.36, "cost": 41.22}, {"id": 13, "vm": 1, "start": 0.0, "end": 10.26, "cost": 11.17}], "makespan": 71.36, "cost": 345.42, "imbalance": 20.93},
-  cost_aware: {"tasks": [{"id": 0, "vm": 0, "start": 0.0, "end": 15.05, "cost": 27.08}, {"id": 1, "vm": 1, "start": 10.26, "end": 15.68, "cost": 5.9}, {"id": 2, "vm": 3, "start": 35.62, "end": 39.0, "cost": 8.07}, {"id": 3, "vm": 3, "start": 51.35, "end": 57.01, "cost": 13.55}, {"id": 4, "vm": 3, "start": 57.01, "end": 68.76, "cost": 28.11}, {"id": 5, "vm": 2, "start": 0.0, "end": 12.92, "cost": 31.86}, {"id": 6, "vm": 2, "start": 12.92, "end": 28.82, "cost": 39.19}, {"id": 7, "vm": 0, "start": 41.89, "end": 59.31, "cost": 31.36}, {"id": 8, "vm": 3, "start": 39.0, "end": 47.75, "cost": 20.92}, {"id": 9, "vm": 0, "start": 17.58, "end": 29.59, "cost": 21.63}, {"id": 10, "vm": 3, "start": 26.49, "end": 32.9, "cost": 15.35}, {"id": 11, "vm": 3, "start": 0.0, "end": 16.16, "cost": 38.65}, {"id": 12, "vm": 0, "start": 59.31, "end": 77.96, "cost": 33.58}, {"id": 13, "vm": 1, "start": 0.0, "end": 10.26, "cost": 11.17}], "makespan": 77.96, "cost": 326.42, "imbalance": 18.7},
-  tradeoff: [{"beta":0.00,"makespan":79.76,"cost":517.23},{"beta":0.20,"makespan":78.79,"cost":512.28},{"beta":0.40,"makespan":83.44,"cost":508.63},{"beta":0.60,"makespan":98.28,"cost":501.32},{"beta":0.80,"makespan":143.16,"cost":495.60},{"beta":0.95,"makespan":166.68,"cost":493.71}]
+/* =========================================================================
+   DATA
+   Gantt: one representative DAG/VM instance, real output of core/heft_engine,
+   core/local_search and core/cost_model. Aggregate tables: means over many
+   independent trials, real output of core/benchmark.py.
+   ========================================================================= */
+const GANTT = {
+  vms: [{"id":0,"speed":5.62,"cost_per_hour":2.7},{"id":1,"speed":3.85,"cost_per_hour":1.62},{"id":2,"speed":4.71,"cost_per_hour":2.12},{"id":3,"speed":2.18,"cost_per_hour":0.98}],
+  heft: {"tasks":[{"id":0,"vm":1,"start":0.0,"end":6.49,"cost":10.51},{"id":1,"vm":2,"start":6.49,"end":16.94,"cost":22.15},{"id":2,"vm":0,"start":16.94,"end":24.71,"cost":20.98},{"id":3,"vm":2,"start":24.71,"end":34.02,"cost":19.74},{"id":4,"vm":1,"start":6.49,"end":19.36,"cost":20.85},{"id":5,"vm":3,"start":0.0,"end":13.27,"cost":13.0},{"id":6,"vm":0,"start":24.71,"end":33.9,"cost":24.79},{"id":7,"vm":2,"start":34.02,"end":45.77,"cost":24.91},{"id":8,"vm":1,"start":19.36,"end":28.61,"cost":14.99},{"id":9,"vm":3,"start":13.27,"end":25.12,"cost":11.61},{"id":10,"vm":2,"start":45.77,"end":56.14,"cost":21.98},{"id":11,"vm":0,"start":33.9,"end":44.52,"cost":26.0},{"id":12,"vm":0,"start":44.52,"end":58.35,"cost":33.76},{"id":13,"vm":2,"start":56.14,"end":72.71,"cost":35.09}], makespan:72.71, cost:312.11, utilization:38.11, loadBalance:0.9078},
+  ls: {"tasks":[{"id":0,"vm":1,"start":0.0,"end":6.49,"cost":10.51},{"id":1,"vm":2,"start":6.49,"end":16.94,"cost":22.15},{"id":2,"vm":0,"start":16.94,"end":24.71,"cost":20.98},{"id":3,"vm":2,"start":24.71,"end":34.02,"cost":19.74},{"id":4,"vm":1,"start":6.49,"end":19.36,"cost":20.85},{"id":5,"vm":3,"start":0.0,"end":13.27,"cost":13.0},{"id":6,"vm":0,"start":24.71,"end":33.9,"cost":24.79},{"id":7,"vm":2,"start":34.02,"end":45.77,"cost":24.91},{"id":8,"vm":1,"start":19.36,"end":28.61,"cost":14.99},{"id":9,"vm":3,"start":13.27,"end":25.12,"cost":11.61},{"id":10,"vm":2,"start":45.77,"end":56.14,"cost":21.98},{"id":11,"vm":0,"start":33.9,"end":44.52,"cost":26.0},{"id":12,"vm":0,"start":44.52,"end":58.35,"cost":33.76},{"id":13,"vm":2,"start":56.14,"end":72.71,"cost":35.09}], makespan:72.71, cost:312.11, utilization:38.11, loadBalance:0.9078},
+  cost_aware: {"tasks":[{"id":0,"vm":1,"start":0.0,"end":6.49,"cost":10.51},{"id":1,"vm":2,"start":6.49,"end":16.94,"cost":22.15},{"id":2,"vm":0,"start":16.94,"end":24.71,"cost":20.98},{"id":3,"vm":2,"start":24.71,"end":34.02,"cost":19.74},{"id":4,"vm":3,"start":25.12,"end":38.09,"cost":12.71},{"id":5,"vm":3,"start":0.0,"end":13.27,"cost":13.0},{"id":6,"vm":3,"start":13.27,"end":25.12,"cost":11.61},{"id":7,"vm":2,"start":34.02,"end":45.77,"cost":24.91},{"id":8,"vm":1,"start":6.49,"end":19.36,"cost":20.85},{"id":9,"vm":1,"start":19.36,"end":31.21,"cost":19.2},{"id":10,"vm":2,"start":45.77,"end":56.14,"cost":21.98},{"id":11,"vm":0,"start":24.71,"end":33.9,"cost":24.79},{"id":12,"vm":0,"start":44.52,"end":58.35,"cost":33.76},{"id":13,"vm":2,"start":56.14,"end":74.12,"cost":38.77}], makespan:74.12, cost:303.30, utilization:40.91, loadBalance:0.4487}
 };
 
-const scaleMax = Math.max(DATA.heft.makespan, DATA.cost_aware.makespan) * 1.06;
+const STATIC = {
+  trials: 30,
+  methods: [
+    { key:"heft", name:"HEFT", short:"HEFT", color:"--m-heft", makespan:91.78, cost:544.30, utilization:44.39, loadBalance:0.7338 },
+    { key:"ls", name:"HEFT + LS", short:"+LS", color:"--m-ls", makespan:91.73, cost:544.28, utilization:44.42, loadBalance:0.7335 },
+    { key:"cost_aware", name:"HEFT + Cost-ILS", short:"Cost-ILS", color:"--m-cost", makespan:95.73, cost:534.96, utilization:45.03, loadBalance:0.6358 }
+  ]
+};
 
-function fmt(n) { return n.toFixed(2); }
+const DYNAMIC = {
+  trials: 20,
+  methods: [
+    { key:"selective", name:"Selective repair", color:"--m-selective", tasksTouched:6.20, repairMs:0.1517, stability:76.4, makespan:105.25 },
+    { key:"naive", name:"Naive reschedule", color:"--m-naive", tasksTouched:15.15, repairMs:0.2724, stability:47.4, makespan:104.81 }
+  ]
+};
 
-function render(view) {
-  const d = DATA[view];
-  const accent = view === "heft" ? "var(--heft)" : "var(--cost)";
-  const other = view === "heft" ? DATA.cost_aware : DATA.heft;
+const TRADEOFF = [{"beta":0.00,"makespan":79.76,"cost":517.23},{"beta":0.20,"makespan":78.79,"cost":512.28},{"beta":0.40,"makespan":83.44,"cost":508.63},{"beta":0.60,"makespan":98.28,"cost":501.32},{"beta":0.80,"makespan":143.16,"cost":495.60},{"beta":0.95,"makespan":166.68,"cost":493.71}];
 
-  const deltaMs = d.makespan - other.makespan;
-  const deltaCost = d.cost - other.cost;
-  const deltaImb = d.imbalance - other.imbalance;
+/* =========================================================================
+   SHARED HELPERS
+   ========================================================================= */
+function tok(varName) { return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || "currentColor"; }
+function fmt(n, d) { return n.toFixed(d === undefined ? 2 : d); }
 
-  document.getElementById("metrics").innerHTML = `
-    <div class="metric" style="--accent:${accent}">
-      <div class="label">Makespan</div>
-      <div class="value">${fmt(d.makespan)}</div>
-      <div class="delta ${deltaMs>0?'up':deltaMs<0?'down':''}">${deltaMs===0?'&mdash;':(deltaMs>0?'+':'')+fmt(deltaMs)+' vs other'}</div>
-    </div>
-    <div class="metric" style="--accent:${accent}">
-      <div class="label">Cost ($)</div>
-      <div class="value">${fmt(d.cost)}</div>
-      <div class="delta ${deltaCost>0?'up':deltaCost<0?'down':''}">${deltaCost===0?'&mdash;':(deltaCost>0?'+':'')+fmt(deltaCost)+' vs other'}</div>
-    </div>
-    <div class="metric" style="--accent:${accent}">
-      <div class="label">Imbalance (stdev)</div>
-      <div class="value">${fmt(d.imbalance)}</div>
-      <div class="delta ${deltaImb>0?'up':deltaImb<0?'down':''}">${deltaImb===0?'&mdash;':(deltaImb>0?'+':'')+fmt(deltaImb)+' vs other'}</div>
-    </div>`;
+const tooltip = document.getElementById("tooltip");
+function showTip(evt, method, valueText) {
+  tooltip.innerHTML = '<span class="tt-m">' + method + "</span>" + valueText;
+  tooltip.style.left = evt.clientX + "px";
+  tooltip.style.top = evt.clientY + "px";
+  tooltip.classList.add("visible");
+}
+function moveTip(evt) { tooltip.style.left = evt.clientX + "px"; tooltip.style.top = evt.clientY + "px"; }
+function hideTip() { tooltip.classList.remove("visible"); }
 
-  const rowsHtml = DATA.vms.map(vm => {
+/* =========================================================================
+   PART 1: GANTT + METRIC TILES (interactive, toggled by method)
+   ========================================================================= */
+const scaleMax = Math.max(GANTT.heft.makespan, GANTT.ls.makespan, GANTT.cost_aware.makespan) * 1.06;
+
+function renderOverview(view) {
+  const d = GANTT[view];
+  const colorVar = view === "heft" ? "--m-heft" : view === "ls" ? "--m-ls" : "--m-cost";
+  const others = Object.keys(GANTT).filter(k => k !== view).map(k => GANTT[k]);
+  const baseline = view === "heft" ? null : GANTT.heft; // compare vs baseline when not on it
+
+  function deltaBlock(curr, base, invertGood) {
+    if (!base) return '<div class="delta">baseline</div>';
+    const d = curr - base;
+    const dir = d > 1e-9 ? "up" : d < -1e-9 ? "down" : "";
+    const cls = invertGood ? (dir === "up" ? "down" : dir === "down" ? "up" : "") : dir;
+    const sign = d > 0 ? "+" : "";
+    return '<div class="delta ' + cls + '">' + (Math.abs(d) < 1e-9 ? "&mdash; vs HEFT" : sign + fmt(d, 2) + " vs HEFT") + "</div>";
+  }
+
+  document.getElementById("metrics").innerHTML =
+    '<div class="metric" style="--m-accent:var(' + colorVar + ')">' +
+      '<div class="label">Makespan</div><div class="value">' + fmt(d.makespan, 2) + "</div>" + deltaBlock(d.makespan, baseline && baseline.makespan, false) +
+    "</div>" +
+    '<div class="metric" style="--m-accent:var(' + colorVar + ')">' +
+      '<div class="label">Cost ($)</div><div class="value">' + fmt(d.cost, 2) + "</div>" + deltaBlock(d.cost, baseline && baseline.cost, false) +
+    "</div>" +
+    '<div class="metric" style="--m-accent:var(' + colorVar + ')">' +
+      '<div class="label">Utilization (%)</div><div class="value">' + fmt(d.utilization, 1) + "</div>" + deltaBlock(d.utilization, baseline && baseline.utilization, true) +
+    "</div>" +
+    '<div class="metric" style="--m-accent:var(' + colorVar + ')">' +
+      '<div class="label">Load balance idx</div><div class="value">' + fmt(d.loadBalance, 3) + "</div>" + deltaBlock(d.loadBalance, baseline && baseline.loadBalance, false) +
+    "</div>";
+
+  const rowsHtml = GANTT.vms.map(vm => {
     const tasks = d.tasks.filter(t => t.vm === vm.id);
     const bars = tasks.map(t => {
       const left = (t.start / scaleMax) * 100;
       const width = ((t.end - t.start) / scaleMax) * 100;
-      return `<div class="bar" style="left:${left}%;width:${width}%;--accent:${accent}" title="Task ${t.id} &middot; ${fmt(t.start)}&ndash;${fmt(t.end)} &middot; $${fmt(t.cost)}">T${t.id}</div>`;
+      return '<div class="bar" style="left:' + left + '%;width:' + width + '%;--m-accent:var(' + colorVar + ')" ' +
+        'title="Task ' + t.id + ' · ' + fmt(t.start, 2) + '–' + fmt(t.end, 2) + ' · $' + fmt(t.cost, 2) + '">T' + t.id + "</div>";
     }).join("");
-    return `<div class="row"><div class="row-label">VM ${vm.id}</div><div class="track">${bars}</div></div>`;
+    return '<div class="row"><div class="row-label">VM ' + vm.id + '</div><div class="track">' + bars + "</div></div>";
   }).join("");
   document.getElementById("rows").innerHTML = rowsHtml;
 
-  document.getElementById("btn-heft").classList.toggle("active", view === "heft");
-  document.getElementById("btn-cost").classList.toggle("active", view === "cost_aware");
+  document.querySelectorAll("#view-toggle button").forEach(b => {
+    const active = b.dataset.view === view;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-selected", String(active));
+  });
 }
 
-function setView(view) { render(view); }
+document.getElementById("view-toggle").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-view]");
+  if (!btn) return;
+  renderOverview(btn.dataset.view);
+});
 
+/* =========================================================================
+   PART 2: REUSABLE BAR CHART (categorical, one bar per method)
+   ========================================================================= */
+const NS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+function roundedTopRect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h);
+  if (h <= r) return "M" + x + "," + (y + h) + " L" + x + "," + y + " L" + (x + w) + "," + y + " L" + (x + w) + "," + (y + h) + " Z";
+  return ["M", x, y + h, "L", x, y + r, "Q", x, y, x + r, y, "L", x + w - r, y, "Q", x + w, y, x + w, y + r, "L", x + w, y + h, "Z"].join(" ");
+}
+function niceMax(raw) {
+  if (raw <= 0) return 1;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+  return step * mag;
+}
+function niceTicks(max, count) {
+  const t = [];
+  for (let i = 0; i <= count; i++) t.push((max / count) * i);
+  return t;
+}
+
+function renderBarChart(svg, categories, opts) {
+  opts = opts || {};
+  const W = 220, H = 170, padTop = 14, padBottom = 30, padLeft = 6, padRight = 6;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const values = categories.map(c => c.value);
+  const maxVal = niceMax(Math.max.apply(null, values) * 1.2);
+  const ticks = niceTicks(maxVal, 3);
+  const plotW = W - padLeft - padRight, plotH = H - padTop - padBottom, baseY = H - padBottom;
+  const yFor = v => baseY - (v / maxVal) * plotH;
+
+  const grid = tok("--border"), muted = tok("--muted"), secondary = tok("--text-secondary");
+
+  ticks.forEach(t => {
+    const y = yFor(t);
+    svg.appendChild(svgEl("line", { x1: padLeft, x2: W - padRight, y1: y, y2: y, stroke: grid, "stroke-width": 1 }));
+  });
+
+  const n = categories.length;
+  const band = plotW / n;
+  const barW = Math.min(30, band * 0.55);
+
+  categories.forEach(cat => {
+    const idx = categories.indexOf(cat);
+    const cx = padLeft + band * idx + band / 2;
+    const x = cx - barW / 2;
+    const y = yFor(cat.value);
+    const h = baseY - y;
+    const color = tok(cat.color);
+    const valueText = opts.formatValue ? opts.formatValue(cat.value) : String(cat.value);
+
+    const g = svgEl("g", { class: "bar-mark", tabindex: "0", role: "img", "aria-label": cat.name + ": " + valueText });
+    g.appendChild(svgEl("path", { d: roundedTopRect(x, y, barW, Math.max(h, 1), 4), fill: color }));
+
+    const valLabel = svgEl("text", { x: cx, y: y - 6, "text-anchor": "middle", "font-size": "9.5", "font-weight": "600", fill: secondary });
+    valLabel.textContent = valueText;
+    g.appendChild(valLabel);
+
+    const catLabel = svgEl("text", { x: cx, y: H - padBottom + 15, "text-anchor": "middle", "font-size": "9", fill: muted, class: "cat-label" });
+    catLabel.textContent = cat.short || cat.name;
+    g.appendChild(catLabel);
+
+    g.addEventListener("mouseenter", e => showTip(e, cat.name, valueText));
+    g.addEventListener("mousemove", moveTip);
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("focus", () => {
+      const r = g.getBoundingClientRect();
+      showTip({ clientX: r.left + r.width / 2, clientY: r.top }, cat.name, valueText);
+    });
+    g.addEventListener("blur", hideTip);
+
+    svg.appendChild(g);
+  });
+}
+
+function renderLegend(container, methods) {
+  container.innerHTML = "";
+  methods.forEach(m => {
+    const item = document.createElement("span");
+    item.className = "item";
+    const sw = document.createElement("span");
+    sw.className = "swatch";
+    sw.style.background = tok(m.color);
+    item.appendChild(sw);
+    item.appendChild(document.createTextNode(m.name));
+    container.appendChild(item);
+  });
+}
+
+function buildChartCard(title, unit) {
+  const card = document.createElement("div");
+  card.className = "chart-card";
+  const h = document.createElement("div");
+  h.className = "chart-title";
+  h.textContent = title;
+  const u = document.createElement("div");
+  u.className = "chart-unit";
+  u.textContent = unit;
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", title);
+  card.appendChild(h); card.appendChild(u); card.appendChild(svg);
+  return { card, svg };
+}
+
+function buildDataTable(container, caption, headers, rows) {
+  container.innerHTML = "";
+  const table = document.createElement("table");
+  table.className = "data-table";
+  const cap = document.createElement("caption");
+  cap.textContent = caption;
+  table.appendChild(cap);
+  const thead = document.createElement("thead");
+  const htr = document.createElement("tr");
+  headers.forEach(hText => { const th = document.createElement("th"); th.scope = "col"; th.textContent = hText; htr.appendChild(th); });
+  thead.appendChild(htr); table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  rows.forEach(row => {
+    const tr = document.createElement("tr");
+    row.forEach(cell => { const td = document.createElement("td"); td.textContent = cell; tr.appendChild(td); });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody); container.appendChild(table);
+}
+
+function wireToggle(buttonId, targetId) {
+  const btn = document.getElementById(buttonId);
+  const target = document.getElementById(targetId);
+  btn.addEventListener("click", () => {
+    const open = btn.getAttribute("aria-pressed") === "true";
+    btn.setAttribute("aria-pressed", String(!open));
+    btn.textContent = open ? "Show as table" : "Hide table";
+    target.hidden = open;
+  });
+}
+
+/* =========================================================================
+   PART 3: STATIC COMPARISON GRID
+   ========================================================================= */
+function renderStaticSection() {
+  renderLegend(document.getElementById("legend-static"), STATIC.methods);
+  const grid = document.getElementById("grid-static");
+  grid.innerHTML = "";
+
+  const metrics = [
+    { key: "makespan", title: "Avg. makespan", unit: "Time units, lower is faster", fmtValue: v => fmt(v, 1) },
+    { key: "cost", title: "Avg. cost", unit: "$, lower is cheaper", fmtValue: v => "$" + fmt(v, 0) },
+    { key: "utilization", title: "VM utilization", unit: "% of makespan busy, higher is fuller use", fmtValue: v => fmt(v, 1) + "%" },
+    { key: "loadBalance", title: "Load-balance index", unit: "Coefficient of variation, lower is more even", fmtValue: v => fmt(v, 3) }
+  ];
+
+  metrics.forEach(metric => {
+    const built = buildChartCard(metric.title, metric.unit);
+    grid.appendChild(built.card);
+    const cats = STATIC.methods.map(m => ({ name: m.name, short: m.short, value: m[metric.key], color: m.color }));
+    renderBarChart(built.svg, cats, { formatValue: metric.fmtValue });
+  });
+
+  buildDataTable(
+    document.getElementById("static-table"),
+    "Static comparison — averaged over " + STATIC.trials + " trials",
+    ["Method", "Makespan", "Cost ($)", "Utilization (%)", "Load-balance index"],
+    STATIC.methods.map(m => [m.name, fmt(m.makespan, 2), fmt(m.cost, 2), fmt(m.utilization, 1), fmt(m.loadBalance, 3)])
+  );
+}
+
+/* =========================================================================
+   PART 4: COST FEATURE CHART (broken-axis bar chart)
+   ========================================================================= */
+function renderCostSection() {
+  renderLegend(document.getElementById("legend-cost"), STATIC.methods);
+  const svg = document.getElementById("chart-cost");
+  const W = 520, H = 280, padTop = 20, padBottom = 40, padLeft = 44, padRight = 16;
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  const cats = STATIC.methods.map(m => ({ name: m.name, value: m.cost, color: m.color }));
+  const values = cats.map(c => c.value);
+  const floor = Math.min.apply(null, values) * 0.92;
+  const maxVal = niceMax(Math.max.apply(null, values) * 1.05);
+  const plotW = W - padLeft - padRight, plotH = H - padTop - padBottom, baseY = H - padBottom;
+  const yFor = v => padTop + (1 - (v - floor) / (maxVal - floor)) * plotH;
+
+  const grid = tok("--border"), muted = tok("--muted"), secondary = tok("--text-secondary"), baseline = tok("--border-strong");
+
+  niceTicks(maxVal - floor, 4).map(t => t + floor).forEach(t => {
+    const y = yFor(t);
+    svg.appendChild(svgEl("line", { x1: padLeft, x2: W - padRight, y1: y, y2: y, stroke: grid, "stroke-width": 1 }));
+    const lbl = svgEl("text", { x: padLeft - 8, y: y + 3, "text-anchor": "end", "font-size": "10", fill: muted });
+    lbl.textContent = "$" + Math.round(t);
+    svg.appendChild(lbl);
+  });
+  svg.appendChild(svgEl("line", { x1: padLeft, x2: W - padRight, y1: baseY, y2: baseY, stroke: baseline, "stroke-width": 1 }));
+
+  const n = cats.length, band = plotW / n, barW = Math.min(64, band * 0.5);
+  cats.forEach((cat, i) => {
+    const cx = padLeft + band * i + band / 2, x = cx - barW / 2;
+    const y = yFor(cat.value), h = baseY - y, color = tok(cat.color);
+    const valueText = "$" + fmt(cat.value, 2);
+
+    const g = svgEl("g", { class: "bar-mark", tabindex: "0", role: "img", "aria-label": cat.name + ": " + valueText });
+    g.appendChild(svgEl("path", { d: roundedTopRect(x, y, barW, Math.max(h, 1), 4), fill: color }));
+
+    const valLabel = svgEl("text", { x: cx, y: y - 10, "text-anchor": "middle", "font-size": "13", "font-weight": "600", fill: secondary });
+    valLabel.textContent = valueText;
+    g.appendChild(valLabel);
+
+    const catLabel = svgEl("text", { x: cx, y: H - padBottom + 20, "text-anchor": "middle", "font-size": "11", fill: muted, class: "cat-label" });
+    catLabel.textContent = cat.name;
+    g.appendChild(catLabel);
+
+    g.addEventListener("mouseenter", e => showTip(e, cat.name, valueText));
+    g.addEventListener("mousemove", moveTip);
+    g.addEventListener("mouseleave", hideTip);
+    g.addEventListener("focus", () => {
+      const r = g.getBoundingClientRect();
+      showTip({ clientX: r.left + r.width / 2, clientY: r.top }, cat.name, valueText);
+    });
+    g.addEventListener("blur", hideTip);
+
+    svg.appendChild(g);
+  });
+
+  const axisNote = svgEl("text", { x: padLeft, y: padTop - 6, "font-size": "8.5", fill: muted });
+  axisNote.textContent = "axis starts near $" + Math.round(floor) + ", not $0 — differences are the point";
+  svg.appendChild(axisNote);
+
+  const heft = STATIC.methods[0], ca = STATIC.methods[2];
+  const save = ((heft.cost - ca.cost) / heft.cost) * 100;
+  document.getElementById("cost-savings-num").textContent = "−" + fmt(save, 1) + "%";
+
+  buildDataTable(
+    document.getElementById("cost-table"),
+    "Average schedule cost — " + STATIC.trials + " trials",
+    ["Method", "Cost ($)", "vs. HEFT"],
+    STATIC.methods.map(m => [m.name, fmt(m.cost, 2), m.key === "heft" ? "—" : fmt(((m.cost - heft.cost) / heft.cost) * 100, 1) + "%"])
+  );
+}
+
+/* =========================================================================
+   PART 5: TRADE-OFF CURVE
+   ========================================================================= */
 function renderTradeoff() {
-  const pts = DATA.tradeoff;
-  const minMs = Math.min(...pts.map(p=>p.makespan)), maxMs = Math.max(...pts.map(p=>p.makespan));
-  const minC = Math.min(...pts.map(p=>p.cost)), maxC = Math.max(...pts.map(p=>p.cost));
-  const padL = 50, padR = 20, padT = 16, padB = 30, w = 640-padL-padR, h = 220-padT-padB;
-  const x = ms => padL + ((ms-minMs)/(maxMs-minMs))*w;
-  const y = c => padT + (1-(c-minC)/(maxC-minC))*h;
+  const pts = TRADEOFF;
+  const minMs = Math.min(...pts.map(p => p.makespan)), maxMs = Math.max(...pts.map(p => p.makespan));
+  const minC = Math.min(...pts.map(p => p.cost)), maxC = Math.max(...pts.map(p => p.cost));
+  const padL = 50, padR = 20, padT = 16, padB = 30, w = 640 - padL - padR, h = 220 - padT - padB;
+  const x = ms => padL + ((ms - minMs) / (maxMs - minMs)) * w;
+  const y = c => padT + (1 - (c - minC) / (maxC - minC)) * h;
 
-  const line = pts.map(p=>`${x(p.makespan)},${y(p.cost)}`).join(" ");
-  const dots = pts.map(p=>`<circle cx="${x(p.makespan)}" cy="${y(p.cost)}" r="4" fill="var(--cost)"/><text x="${x(p.makespan)+7}" y="${y(p.cost)-7}">&beta;=${p.beta.toFixed(2)}</text>`).join("");
+  const line = pts.map(p => x(p.makespan) + "," + y(p.cost)).join(" ");
+  const dots = pts.map(p =>
+    '<circle cx="' + x(p.makespan) + '" cy="' + y(p.cost) + '" r="4" fill="var(--m-cost)"/>' +
+    '<text class="grid-text" x="' + (x(p.makespan) + 7) + '" y="' + (y(p.cost) - 7) + '">β=' + p.beta.toFixed(2) + "</text>"
+  ).join("");
 
-  document.getElementById("tradeoff-svg").innerHTML = `
-    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+h}" stroke="var(--border)"/>
-    <line x1="${padL}" y1="${padT+h}" x2="${padL+w}" y2="${padT+h}" stroke="var(--border)"/>
-    <text x="${padL-8}" y="${padT+4}" text-anchor="end">$${maxC.toFixed(0)}</text>
-    <text x="${padL-8}" y="${padT+h+4}" text-anchor="end">$${minC.toFixed(0)}</text>
-    <text x="${padL}" y="${padT+h+20}">${minMs.toFixed(0)}</text>
-    <text x="${padL+w}" y="${padT+h+20}" text-anchor="end">${maxMs.toFixed(0)}</text>
-    <polyline points="${line}" fill="none" stroke="var(--cost)" stroke-width="2"/>
-    ${dots}`;
+  document.getElementById("tradeoff-svg").innerHTML =
+    '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT + h) + '" stroke="var(--border)"/>' +
+    '<line x1="' + padL + '" y1="' + (padT + h) + '" x2="' + (padL + w) + '" y2="' + (padT + h) + '" stroke="var(--border)"/>' +
+    '<text class="grid-text" x="' + (padL - 8) + '" y="' + (padT + 4) + '" text-anchor="end">$' + maxC.toFixed(0) + "</text>" +
+    '<text class="grid-text" x="' + (padL - 8) + '" y="' + (padT + h + 4) + '" text-anchor="end">$' + minC.toFixed(0) + "</text>" +
+    '<text class="grid-text" x="' + padL + '" y="' + (padT + h + 20) + '">' + minMs.toFixed(0) + "</text>" +
+    '<text class="grid-text" x="' + (padL + w) + '" y="' + (padT + h + 20) + '" text-anchor="end">' + maxMs.toFixed(0) + "</text>" +
+    '<polyline points="' + line + '" fill="none" stroke="var(--m-cost)" stroke-width="2"/>' + dots;
 }
 
-render("heft");
-renderTradeoff();
+/* =========================================================================
+   PART 6: DYNAMIC COMPARISON GRID
+   ========================================================================= */
+function renderDynamicSection() {
+  renderLegend(document.getElementById("legend-dynamic"), DYNAMIC.methods);
+  const grid = document.getElementById("grid-dynamic");
+  grid.innerHTML = "";
+
+  const metrics = [
+    { key: "tasksTouched", title: "Tasks touched", unit: "Per repair, lower disturbs less", fmtValue: v => fmt(v, 1) },
+    { key: "repairMs", title: "Repair time", unit: "Milliseconds, lower is faster", fmtValue: v => fmt(v, 3) },
+    { key: "stability", title: "Schedule stability", unit: "% of plan unchanged, higher is steadier", fmtValue: v => fmt(v, 1) + "%" },
+    { key: "makespan", title: "Resulting makespan", unit: "Time units after repair", fmtValue: v => fmt(v, 1) }
+  ];
+
+  metrics.forEach(metric => {
+    const built = buildChartCard(metric.title, metric.unit);
+    grid.appendChild(built.card);
+    const cats = DYNAMIC.methods.map(m => ({ name: m.name, short: m.name.split(" ")[0], value: m[metric.key], color: m.color }));
+    renderBarChart(built.svg, cats, { formatValue: metric.fmtValue });
+  });
+
+  buildDataTable(
+    document.getElementById("dynamic-table"),
+    "Dynamic repair — averaged over " + DYNAMIC.trials + " disruption trials",
+    ["Method", "Tasks touched", "Repair time (ms)", "Stability (%)", "Makespan"],
+    DYNAMIC.methods.map(m => [m.name, fmt(m.tasksTouched, 1), fmt(m.repairMs, 4), fmt(m.stability, 1), fmt(m.makespan, 2)])
+  );
+}
+
+/* =========================================================================
+   IN-PAGE NAV: highlight current section on scroll
+   ========================================================================= */
+function wireSubnav() {
+  const links = Array.from(document.querySelectorAll("nav.subnav a"));
+  const sections = links.map(l => document.querySelector(l.getAttribute("href")));
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const idx = sections.indexOf(entry.target);
+      if (idx === -1) return;
+      links.forEach(l => l.classList.remove("current"));
+      links[idx].classList.add("current");
+    });
+  }, { rootMargin: "-40% 0px -50% 0px" });
+  sections.forEach(s => s && io.observe(s));
+}
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+function renderAll() {
+  renderOverview("heft");
+  renderStaticSection();
+  renderCostSection();
+  renderTradeoff();
+  renderDynamicSection();
+}
+renderAll();
+wireToggle("toggle-static", "static-table");
+wireToggle("toggle-cost", "cost-table");
+wireToggle("toggle-dynamic", "dynamic-table");
+wireSubnav();
+
+if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
+new MutationObserver(muts => { if (muts.some(m => m.attributeName === "data-theme")) renderAll(); })
+  .observe(document.documentElement, { attributes: true });
 </script>
 </body>
 </html>
