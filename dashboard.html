@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cloud Fleet Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   /* ---------- tokens (AWS inspired dark/light theme) ---------- */
   :root {
@@ -186,17 +188,131 @@
   .tip.on { opacity:.96; }
 
   @media (prefers-reduced-motion: reduce) { * { animation-duration:.001ms !important; animation-delay:0ms !important; transition-duration:.001ms !important; } html { scroll-behavior:auto; } }
+
+/* ===================== Gen-Z layer ===================== */
+:root{--font-body:"Outfit",system-ui,-apple-system,"Segoe UI",sans-serif;--font-display:"Space Grotesk","Outfit",system-ui,sans-serif;--glass:rgba(27,36,48,.62);--glow:rgba(255,153,0,.5);--accent2:#ffb84d;--c-rate:#a78bfa;--soft-good:rgba(46,204,113,.15);--soft-bad:rgba(231,76,60,.15)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--glass:rgba(255,255,255,.66);--glow:rgba(255,153,0,.4);--soft-good:rgba(39,174,96,.14);--soft-bad:rgba(211,84,0,.12)}}
+:root[data-theme="dark"]{--bg:#0f141a;--panel:#1b2430;--panel2:#222f3e;--sunken:#121821;--border:#303e50;--border2:#43556d;--text:#f2f4f8;--text2:#9ba3af;--muted:#6c7a89;--accent-ink:#0f141a;--good:#2ecc71;--bad:#e74c3c;--idle:rgba(231,76,60,.18);--c-naive:#e74c3c;--c-heft:#8fa4c4;--c-ils:#00a4e4;--c-cost:#ff9900;--glass:rgba(27,36,48,.62);--glow:rgba(255,153,0,.5);--soft-good:rgba(46,204,113,.15);--soft-bad:rgba(231,76,60,.15);color-scheme:dark}
+:root[data-theme="light"]{--bg:#f8f9fa;--panel:#fff;--panel2:#f1f3f5;--sunken:#e9ecef;--border:#dee2e6;--border2:#ced4da;--text:#1a202c;--text2:#4a5568;--muted:#718096;--accent-ink:#fff;--good:#27ae60;--bad:#d35400;--idle:rgba(211,84,0,.12);--c-naive:#c0392b;--c-heft:#576574;--c-ils:#0082b4;--c-cost:#d35400;--glass:rgba(255,255,255,.66);--glow:rgba(255,153,0,.4);--soft-good:rgba(39,174,96,.14);--soft-bad:rgba(211,84,0,.12);color-scheme:light}
+body{font:15px/1.55 var(--font-body);transition:background .3s,color .3s}
+h1,.section-title,.panel-title,.gname,.eyebrow,.btn,.seg button,th,.step .t,.badge .lab{font-family:var(--font-display)}
+.mono,output,.num,.badge .big,.bval,.bdelta,.step .ms{font-family:var(--font-display);font-variant-numeric:tabular-nums}
+h1{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.section-title{font-size:21px;font-weight:700;letter-spacing:-.01em}
+.masthead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.theme-btn{flex:none;background:var(--panel);color:var(--text);border:1px solid var(--border2);border-radius:99px;width:40px;height:40px;font-size:17px;cursor:pointer;transition:box-shadow .2s,transform .2s}
+.theme-btn:hover{box-shadow:0 0 0 4px var(--glow);transform:rotate(18deg)}
+/* glass controls */
+.panel.controls{background:var(--glass);-webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%);border:1px solid var(--border);border-top:3px solid var(--accent);box-shadow:0 10px 30px rgba(0,0,0,.28)}
+/* dynamic sliders */
+input[type=range]{-webkit-appearance:none;appearance:none;height:24px;background:transparent;cursor:pointer;--pct:0%}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:99px}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:linear-gradient(90deg,var(--accent2),var(--accent) var(--pct),var(--sunken) var(--pct));box-shadow:inset 0 0 0 1px var(--border)}
+input[type=range]::-moz-range-track{height:6px;border-radius:99px;background:var(--sunken);box-shadow:inset 0 0 0 1px var(--border)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:99px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-7px;border-radius:50%;background:var(--panel);border:3px solid var(--accent);box-shadow:0 2px 6px rgba(0,0,0,.4);transition:transform .18s var(--ease),box-shadow .18s}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--panel);border:3px solid var(--accent);box-shadow:0 2px 6px rgba(0,0,0,.4);transition:transform .18s var(--ease),box-shadow .18s}
+input[type=range]:hover::-webkit-slider-thumb,input[type=range]:focus-visible::-webkit-slider-thumb{transform:scale(1.2);box-shadow:0 0 0 6px var(--glow),0 0 18px var(--glow)}
+input[type=range]:hover::-moz-range-thumb,input[type=range]:focus-visible::-moz-range-thumb{transform:scale(1.2);box-shadow:0 0 0 6px var(--glow),0 0 18px var(--glow)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.08)}
+.field output{font-weight:600;color:var(--accent)}
+/* pipeline */
+.steps{counter-reset:s}
+.step{overflow:visible;background:var(--panel2)}
+.step:not(:last-child)::after{content:"\203A";position:absolute;right:-10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;z-index:1}
+.step .n{font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.step.active{box-shadow:0 0 0 3px var(--glow);animation:pulse 1s ease-in-out infinite alternate}
+.step.done{border-color:var(--good)}
+.step.done .n::after{content:" \2713";color:var(--good)}
+.step.done .bar{background:var(--good)}
+.step .ms{opacity:.35;font-weight:600;background:var(--sunken);padding:1px 7px;border-radius:99px}
+.step .ms:empty::before{content:"\2014 ms"}
+.step.done .ms{opacity:1;color:var(--accent)}
+@keyframes pulse{to{box-shadow:0 0 0 6px transparent}}
+@media (max-width:900px){.step:not(:last-child)::after{display:none}}
+/* badges */
+.badge{--tone:var(--muted);border-top-color:var(--tone);position:relative;overflow:hidden}
+.badge.pos{--tone:var(--good)}.badge.neg{--tone:var(--bad)}.badge.zero{--tone:var(--muted)}
+.badge::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 80% at 100% 0,color-mix(in srgb,var(--tone) 14%,transparent),transparent 60%);pointer-events:none}
+.badge .lab{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:500}
+.badge .big{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums}
+.ind{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;color:var(--tone);background:color-mix(in srgb,var(--tone) 16%,transparent);white-space:nowrap}
+/* segmented switcher + bars */
+.seg button{font-weight:500}.seg button.on{background:var(--accent);color:var(--accent-ink);box-shadow:0 2px 10px var(--glow)}
+.btrack{position:relative;height:24px}
+.bfill{background:linear-gradient(90deg,color-mix(in srgb,var(--c) 45%,transparent),var(--c));box-shadow:0 0 12px color-mix(in srgb,var(--c) 40%,transparent)}
+.bmark{position:absolute;top:-2px;bottom:-2px;width:0;border-left:2px dashed var(--text);opacity:.7;transition:left .8s var(--ease)}
+.bmark[hidden]{display:none}
+.bdelta{font-weight:600;padding:2px 8px;border-radius:99px;background:var(--sunken);font-size:12px}
+.bdelta.good{background:var(--soft-good)}.bdelta.bad{background:var(--soft-bad)}
+/* trace + ops */
+.trace .area{fill:url(#tg)}
+@keyframes fadein{to{opacity:1}}
+.trace .tdot{fill:var(--c-ils);stroke:var(--panel);stroke-width:2}
+.sr{display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.srb{width:54px;height:6px;border-radius:3px;background:var(--sunken);overflow:hidden}
+.srb i{display:block;height:100%;background:linear-gradient(90deg,var(--accent2),var(--good));border-radius:3px}
+/* fleet */
+.fscroll{overflow-x:auto}
+.fleet{min-width:780px}
+.frow,.fhead{grid-template-columns:70px repeat(2,minmax(120px,1.1fr)) repeat(4,minmax(100px,1fr))}
+.fhead span{display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.node{font-weight:700}
+.mini .mb{height:8px}
+.mini .num{min-width:52px;text-align:right;white-space:nowrap}
+.frow{padding:4px 0;border-bottom:1px dashed var(--border)}.frow:last-child{border-bottom:0}
+/* gantt */
+.bar{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 82%,#fff),var(--c));box-shadow:0 1px 0 rgba(255,255,255,.25) inset;border-right:1px solid rgba(0,0,0,.25)}
+.bar.alt{filter:brightness(.86)}
+.gap{background:repeating-linear-gradient(135deg,var(--idle) 0 6px,transparent 6px 12px)}
+.gbody{position:relative;margin-bottom:22px}
+.goverlay{position:absolute;left:106px;right:0;top:0;bottom:0;pointer-events:none}
+.goverlay .done-line{transform:translateX(-1px);box-shadow:0 0 8px var(--glow)}
+.goverlay .flag{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:3px;font-size:11px;font-weight:700;background:var(--text);color:var(--bg);padding:0 6px;border-radius:4px;white-space:nowrap}
+#gantts.hovering .bar:not(.hl){opacity:.45}
+.bar.hl{outline:2px solid var(--text);filter:brightness(1.2);z-index:3}
+.tip{background:var(--panel2);color:var(--text);border:1px solid var(--border2);box-shadow:0 8px 24px rgba(0,0,0,.35);padding:8px 11px;border-radius:8px;line-height:1.45}
+.tip b{display:block;font-family:var(--font-display);font-size:13px;color:var(--accent)}
+.tip span{display:block;font-family:var(--font-display);font-variant-numeric:tabular-nums;color:var(--text2)}
+
+/* ===================== Mercedes-AMG Petronas theme + gradients ===================== */
+:root,:root[data-theme="dark"]{--bg:#07090a;--panel:#12171a;--panel-hi:#1b2428;--panel-lo:#0c1012;--panel2:#1a2226;--sunken:#0a0d0f;--border:#273237;--border2:#3a484e;--text:#eef2f3;--text2:#a9b4b8;--muted:#74838a;--accent:#00d2be;--accent2:#7ff5e6;--accent-ink:#031210;--good:#2de2a6;--bad:#ff4d5e;--idle:rgba(255,77,94,.16);--c-naive:#ff5d6c;--c-heft:#b8bfc4;--c-ils:#00d2be;--c-cost:#ffc24b;--glass:rgba(18,23,26,.6);--glow:rgba(0,210,190,.45);--soft-good:rgba(45,226,166,.15);--soft-bad:rgba(255,77,94,.15);color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef1f2;--panel:#fff;--panel-hi:#fff;--panel-lo:#e4e9eb;--panel2:#f0f3f4;--sunken:#e1e6e8;--border:#d3d9dc;--border2:#b9c2c6;--text:#10171a;--text2:#43515a;--muted:#6a7881;--accent:#00a99a;--accent2:#00d2be;--accent-ink:#fff;--good:#0a9d6e;--bad:#d6293e;--idle:rgba(214,41,62,.12);--c-naive:#d6293e;--c-heft:#7b868d;--c-ils:#00a99a;--c-cost:#d98a00;--glass:rgba(255,255,255,.66);--glow:rgba(0,169,154,.35);--soft-good:rgba(10,157,110,.14);--soft-bad:rgba(214,41,62,.12);color-scheme:light}}
+:root[data-theme="light"]{--bg:#eef1f2;--panel:#fff;--panel-hi:#fff;--panel-lo:#e4e9eb;--panel2:#f0f3f4;--sunken:#e1e6e8;--border:#d3d9dc;--border2:#b9c2c6;--text:#10171a;--text2:#43515a;--muted:#6a7881;--accent:#00a99a;--accent2:#00d2be;--accent-ink:#fff;--good:#0a9d6e;--bad:#d6293e;--idle:rgba(214,41,62,.12);--c-naive:#d6293e;--c-heft:#7b868d;--c-ils:#00a99a;--c-cost:#d98a00;--glass:rgba(255,255,255,.66);--glow:rgba(0,169,154,.35);--soft-good:rgba(10,157,110,.14);--soft-bad:rgba(214,41,62,.12);color-scheme:light}
+body{background:radial-gradient(1100px 520px at 88% -8%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 70%),radial-gradient(800px 400px at -5% 10%,color-mix(in srgb,var(--c-heft) 10%,transparent),transparent 70%),repeating-linear-gradient(45deg,rgba(128,140,145,.035) 0 2px,transparent 2px 5px),var(--bg);background-attachment:fixed}
+h1{background:linear-gradient(90deg,var(--text) 10%,var(--c-heft) 45%,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.masthead{border-left:0;position:relative}.masthead::before{content:"";position:absolute;left:-16px;top:0;bottom:0;width:4px;border-radius:4px;background:linear-gradient(180deg,var(--accent),var(--c-heft))}
+.masthead>div{padding-left:0}
+.panel{background:linear-gradient(155deg,var(--panel-hi),var(--panel) 55%,var(--panel-lo));box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 8px 24px rgba(0,0,0,.2)}
+.panel.controls{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 13%,var(--glass)),var(--glass) 60%)}
+.badge{background:linear-gradient(155deg,var(--panel-hi),var(--panel) 60%,var(--panel-lo));box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.step{background:linear-gradient(160deg,var(--panel-hi),var(--panel2))}
+.step.active{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 16%,var(--panel-hi)),var(--sunken))}
+.gcard{background:linear-gradient(115deg,color-mix(in srgb,var(--eff,var(--c)) 15%,var(--panel)),var(--panel) 50%,var(--panel-lo))}
+.btn.primary{background:linear-gradient(135deg,var(--accent2),var(--accent))}
+.seg button.on{background:linear-gradient(135deg,var(--accent2),var(--accent))}
+.btn:not(.primary){background:linear-gradient(160deg,var(--panel-hi),var(--panel2))}
+/* effectiveness-driven graphics */
+.efflegend{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin:-2px 0 10px}
+.efflegend i{flex:none;width:150px;height:6px;border-radius:3px;background:linear-gradient(90deg,hsl(0 82% 55%),hsl(45 90% 55%),hsl(172 82% 50%))}
+.blabel{display:flex;align-items:center;gap:8px}
+.bfill{background:linear-gradient(90deg,color-mix(in srgb,var(--eff,var(--c)) 35%,transparent),var(--eff,var(--c)));box-shadow:0 0 14px color-mix(in srgb,var(--eff,var(--c)) 45%,transparent)}
+.trace .line{stroke:url(#tl);filter:drop-shadow(0 0 4px var(--glow))}
+.mini .mb i{background:linear-gradient(90deg,color-mix(in srgb,var(--c) 40%,transparent),var(--c))}
+.eff{padding:2px 9px;border-radius:99px;font-weight:600;background:color-mix(in srgb,var(--e) 18%,transparent);color:var(--e)}
+.eff b{color:inherit}
 </style>
 </head>
 <body>
 <main class="page">
 
-  <header class="masthead">
+  <header class="masthead"><div>
     <span class="eyebrow">Cloud Fleet Optimizer</span>
     <h1>Intelligent Resource &amp; Budget Scheduler</h1>
     <p class="sub">A complex project consists of interconnected tasks where timing matters. This dashboard decides which tasks run on which virtual instances and when.
       Press <b>Generate &amp; schedule</b> to build a random workload and watch four strategies tackle it side by side.</p>
-  </header>
+  </div><button class="theme-btn" id="themeBtn" aria-label="Toggle light/dark theme" title="Toggle theme">☾</button></header>
 
   <section class="panel controls" aria-label="Controls">
     <div class="field"><label for="tasks">Tasks <output id="tasksOut">30</output></label>
@@ -229,6 +345,7 @@
       <div class="panel-title">Strategy Comparison</div>
       <div class="seg" id="metricSeg" role="tablist"></div>
       <div class="unit" id="metricUnit"></div>
+      <div class="efflegend"><span>Least effective</span><i></i><span>Most effective</span></div>
       <div id="bars"></div>
     </section>
 
@@ -247,7 +364,7 @@
 
     <div class="section-title">Instance Fleet Performance</div>
     <p class="section-note">Instance speeds and hourly rates vary. A strong scheduler assigns heavier workloads to high-performance nodes while keeping slower nodes idle when waiting would delay completion.</p>
-    <section class="panel"><div class="fleet" id="fleet"></div></section>
+    <section class="panel fscroll"><div class="fleet" id="fleet"></div></section>
 
     <div class="section-title">Schedule Timelines</div>
     <div class="guide">
@@ -313,6 +430,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 const pct = (from, to) => from === 0 ? 0 : (to - from) / from * 100;
 const f1 = v => v.toFixed(1);
+/* effectiveness colour: 0 = red (poor) -> amber -> 1 = Petronas teal (best) */
+const effColor = (k, a) => "hsl(" + Math.round(Math.max(0, Math.min(1, k)) * 172) + " 82% 52%" + (a == null ? ")" : " / " + a + ")");
 
 function countTo(el, target, { dec = 1, prefix = "", suffix = "", dur = 800 } = {}) {
   const text = v => prefix + (Math.abs(v) < 0.05 ? 0 : v).toFixed(dec) + suffix;
@@ -335,7 +454,8 @@ const state = { data:null, metric:"makespan", loading:false, firstBars:true };
    ===================================================================== */
 [["tasks","tasksOut",v=>v],["vms","vmsOut",v=>v],["beta","betaOut",v=>(+v).toFixed(2)]].forEach(([id,out,fmt]) => {
   const input = $("#"+id), o = $("#"+out);
-  input.addEventListener("input", () => { o.textContent = fmt(input.value); });
+  const sync = () => { o.textContent = fmt(input.value); input.style.setProperty("--pct", ((input.value - input.min) / (input.max - input.min) * 100) + "%"); };
+  input.addEventListener("input", sync); sync();
 });
 $("#go").addEventListener("click", () => generate(false));
 $("#find").addEventListener("click", () => generate(true));
@@ -453,7 +573,7 @@ function renderBadges(d) {
   ];
   const box = $("#badges");
   box.innerHTML = badges.map((b, i) =>
-    '<div class="badge" style="--c:var('+b.c+')"><div class="lab">'+b.lab+'</div><div class="big num '+b.cls+'" data-i="'+i+'">0.0%</div><div class="note">'+b.note+'</div></div>').join("");
+    '<div class="badge '+b.cls+'" style="--c:var('+b.c+')"><div class="lab"><span>'+b.lab+'</span><span class="ind">'+({pos:"\u25B2 Positive",neg:"\u25BC Negative",zero:"\u25CF Neutral"})[b.cls]+'</span></div><div class="big num '+b.cls+'" data-i="'+i+'">0.0%</div><div class="note">'+b.note+'</div></div>').join("");
   badges.forEach((b, i) => {
     const el = box.querySelector('[data-i="'+i+'"]');
     countTo(el, b.val, { dec:b.dec, suffix:b.suffix, prefix:"" });
@@ -466,8 +586,8 @@ function buildBars() {
   $("#metricSeg").innerHTML = Object.entries(BAR_METRICS).map(([k, m]) =>
     '<button data-k="'+k+'" class="'+(k === state.metric ? "on" : "")+'">'+m.label+'</button>').join("");
   $("#bars").innerHTML = METHODS.map(m =>
-    '<div class="brow" data-k="'+m.key+'"><span class="blabel">'+m.name+'</span>' +
-    '<div class="btrack"><div class="bfill" style="--c:var('+m.color+')"></div></div><span class="bval num"></span><span class="bdelta num"></span></div>').join("");
+    '<div class="brow" data-k="'+m.key+'"><span class="blabel"><i class="dot" style="background:var('+m.color+')"></i>'+m.name+'</span>' +
+    '<div class="btrack"><div class="bfill" style="--c:var('+m.color+')"></div><i class="bmark"></i></div><span class="bval num"></span><span class="bdelta num"></span></div>').join("");
   $("#metricSeg").addEventListener("click", e => {
     const b = e.target.closest("button[data-k]"); if (!b) return;
     state.metric = b.dataset.k;
@@ -482,9 +602,12 @@ function renderBars(d, fresh) {
   const max = Math.max(...vals, 1e-9);
   const lowerBetter = state.metric !== "utilization";
   const base = spec.get(d.heft);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const scores = vals.map(v => hi === lo ? .65 : (lowerBetter ? hi - v : v - lo) / (hi - lo));
   const apply = () => METHODS.forEach((m, i) => {
     const row = document.querySelector('.brow[data-k="'+m.key+'"]');
-    row.querySelector(".bfill").style.width = (vals[i] / max * 100) + "%";
+    const bf = row.querySelector(".bfill"); bf.style.width = (vals[i] / max * 100) + "%"; bf.style.setProperty("--eff", effColor(scores[i]));
+    const mk = row.querySelector(".bmark"); mk.style.left = (base / max * 100) + "%"; mk.hidden = m.key === "heft";
     row.querySelector(".bval").textContent = spec.fmt(vals[i]);
     const dl = row.querySelector(".bdelta");
     if (m.key === "heft") { dl.textContent = "baseline"; dl.className = "bdelta num"; return; }
@@ -513,7 +636,7 @@ function renderTrace(d) {
     return '<line class="grid" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yy+'" y2="'+yy+'"/><text class="axis" x="'+(pl-6)+'" y="'+(yy+3)+'" text-anchor="end">'+v.toFixed(1)+'</text>'; }).join("");
   $("#traceBox").innerHTML =
     '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Optimization progress over time">' + ticks +
-    '<path class="area" d="'+area+'"/><path class="line" pathLength="1" d="'+line+'"/>' +
+    '<defs><linearGradient id="tg" gradientUnits="userSpaceOnUse" x1="0" y1="'+pt+'" x2="0" y2="'+(H-pb)+'"><stop offset="0" stop-color="hsl(0 82% 55%)" stop-opacity=".55"/><stop offset=".5" stop-color="hsl(45 90% 55%)" stop-opacity=".3"/><stop offset="1" stop-color="hsl(172 82% 50%)" stop-opacity=".1"/></linearGradient><linearGradient id="tl" gradientUnits="userSpaceOnUse" x1="0" y1="'+pt+'" x2="0" y2="'+(H-pb)+'"><stop offset="0" stop-color="hsl(0 82% 58%)"/><stop offset=".5" stop-color="hsl(45 90% 58%)"/><stop offset="1" stop-color="hsl(172 82% 52%)"/></linearGradient></defs><path class="area" d="'+area+'"/><path class="line" pathLength="1" d="'+line+'"/><circle class="tdot" style="fill:'+effColor(1-(t[t.length-1]-lo)/(hi-lo))+'" r="4.5" cx="'+x(t.length-1).toFixed(1)+'" cy="'+y(t[t.length-1]).toFixed(1)+'"/>' +
     '<text class="axis" x="'+pl+'" y="'+(H-8)+'">0</text><text class="axis" x="'+(W-pr)+'" y="'+(H-8)+'" text-anchor="end">'+d.traceLength.toLocaleString()+' steps</text></svg>';
   const gain = -pct(d.heft.makespan, d.ils.makespan);
   $("#traceNote").textContent = gain < 0.05
@@ -523,22 +646,22 @@ function renderTrace(d) {
 
 /* ---------- operator table ---------- */
 function renderOps(d) {
+  const rates = d.operators.map(o => o.attempts ? o.accepted / o.attempts * 100 : 0), mx = Math.max(...rates, 1e-9);
   $("#opsTable").innerHTML =
     '<thead><tr><th>Action Type</th><th class="r">Tested</th><th class="r">Feasible</th><th class="r">Improved</th><th class="r">Success Rate</th></tr></thead><tbody>' +
-    d.operators.map(o => '<tr><td><b>' + o.name + '</b><div class="opdesc">' + (OP_DESC[o.name] || "") + '</div></td>' +
+    d.operators.map((o, i) => '<tr><td><b>' + o.name + '</b><div class="opdesc">' + (OP_DESC[o.name] || "") + '</div></td>' +
       '<td class="r num">'+o.attempts+'</td><td class="r num">'+o.feasible+'</td><td class="r num">'+o.accepted+'</td>' +
-      '<td class="r num">'+(o.attempts ? (o.accepted / o.attempts * 100).toFixed(1) : "0.0")+'%</td></tr>').join("") + '</tbody>';
+      '<td class="r"><div class="sr"><span class="num">'+rates[i].toFixed(1)+'%</span><span class="srb"><i style="width:'+(rates[i]/mx*100)+'%;background:linear-gradient(90deg,'+effColor(rates[i]/mx*.4,.7)+','+effColor(rates[i]/mx)+')"></i></span></div></td></tr>').join("") + '</tbody>';
 }
 
 /* ---------- VM fleet ---------- */
 function renderFleet(d) {
-  const maxSpeed = Math.max(...d.vms.map(v => v.speed));
-  const head = '<div class="fhead"><span>Instance</span><span>Capacity / Rate</span>' + METHODS.map(m => '<span>'+m.name+'</span>').join("") + '</div>';
-  const rows = d.vms.map((v, i) =>
-    '<div class="frow"><span class="mono">Node ' + v.id + '</span>' +
-    '<span class="spd"><span class="sb"><i style="width:'+(v.speed / maxSpeed * 100)+'%"></i></span><span class="mono">\u00D7'+v.speed.toFixed(1)+' \u00B7 $'+v.cost_per_hour.toFixed(2)+'/hr</span></span>' +
-    METHODS.map(m => '<span class="mini" style="--c:var('+m.color+')"><span class="mb"><i data-w="'+(d[m.key].vmUtil[i] * 100)+'"></i></span><span class="mono">'+d[m.key].vmTasks[i]+' tasks</span></span>').join("") +
-    '</div>').join("");
+  const mxS = Math.max(...d.vms.map(v => v.speed)), mxR = Math.max(...d.vms.map(v => v.cost_per_hour));
+  const bar = (c, w, txt) => '<span class="mini" style="--c:' + c + '"><span class="mb"><i data-w="' + w + '"></i></span><span class="num">' + txt + '</span></span>';
+  const head = '<div class="fhead"><span>Instance</span><span>Speed</span><span>Hourly rate</span>' + METHODS.map(m => '<span><i class="dot" style="background:var(' + m.color + ')"></i>' + m.name + '</span>').join("") + '</div>';
+  const rows = d.vms.map((v, i) => '<div class="frow"><span class="num node">Node ' + v.id + '</span>' +
+    bar('var(--accent)', v.speed / mxS * 100, '\u00D7' + v.speed.toFixed(1)) + bar('var(--c-rate)', v.cost_per_hour / mxR * 100, '$' + v.cost_per_hour.toFixed(2) + '/hr') +
+    METHODS.map(m => bar(effColor(d[m.key].vmUtil[i]), d[m.key].vmUtil[i] * 100, d[m.key].vmTasks[i] + ' tasks')).join("") + '</div>').join("");
   const box = $("#fleet");
   box.innerHTML = head + rows;
   requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll("i[data-w]").forEach(el => el.style.width = el.dataset.w + "%")));
@@ -564,6 +687,7 @@ function renderGantts(d) {
 
   const html = METHODS.map(m => {
     const r = d[m.key], ref = m.ref ? d[m.ref] : null, refM = METHODS.find(x => x.key === m.ref);
+    const mk = METHODS.map(x => d[x.key].makespan), mlo = Math.min(...mk), mhi = Math.max(...mk), eff = mhi === mlo ? .65 : (mhi - r.makespan) / (mhi - mlo);
     let chip = "";
     if (ref) {
       const ch = pct(ref.makespan, r.makespan);
@@ -576,30 +700,39 @@ function renderGantts(d) {
       const idle = idleGaps(mine, r.makespan).map(([a, b]) => '<div class="gap" style="left:'+pos(a)+'%;width:'+pos(b - a)+'%"></div>').join("");
       const bars = mine.map((t, k) => {
         const w = pos(t.end - t.start);
-        return '<div class="bar" style="left:'+pos(t.start)+'%;width:'+w+'%;--d:'+Math.min(k * 25, 500)+'ms" data-tip="Task '+t.id+' \u00B7 Node '+v.id+' \u00B7 '+t.start.toFixed(1)+'\u2013'+t.end.toFixed(1)+' \u00B7 $'+t.cost.toFixed(1)+'">' + (w > 3.2 ? t.id : "") + '</div>';
+        return '<div class="bar'+(k % 2 ? " alt" : "")+'" data-id="'+t.id+'" style="left:'+pos(t.start)+'%;width:'+w+'%;--d:'+Math.min(k * 25, 500)+'ms" data-tip="Task '+t.id+' \u00B7 Node '+v.id+' \u00B7 '+t.start.toFixed(1)+'\u2013'+t.end.toFixed(1)+' \u00B7 $'+t.cost.toFixed(1)+'">' + (w > 3.2 ? t.id : "") + '</div>';
       }).join("");
-      const lines = '<div class="done-line" style="left:calc('+pos(r.makespan)+'% - 1px)"></div>' + (ref ? '<div class="ref-line" style="left:'+pos(ref.makespan)+'%"></div>' : "");
-      return '<div class="grow"><span class="glabel">Node '+v.id+' <small>\u00D7'+v.speed.toFixed(1)+'</small></span><div class="track">'+idle+bars+lines+'</div></div>';
+      return '<div class="grow"><span class="glabel">Node '+v.id+' <small>\u00D7'+v.speed.toFixed(1)+'</small></span><div class="track">'+idle+bars+'</div></div>';
     }).join("");
-    return '<article class="gcard" style="--c:var('+m.color+')"><div class="ghead"><div><div class="gname">'+m.name+'</div><div class="gblurb">'+m.blurb+'</div></div>' +
-      '<div class="gmeta"><span>duration <b class="num">'+r.makespan.toFixed(1)+'</b></span><span>cost <b class="num">$'+r.cost.toFixed(0)+'</b></span><span>active <b class="num">'+r.utilization.toFixed(1)+'%</b></span>'+chip+'</div></div>' +
-      axis + rows + '<details class="info"><summary>Strategy details</summary><p>'+m.info+'</p></details></article>';
+    return '<article class="gcard" style="--c:var('+m.color+');--eff:'+effColor(eff)+'"><div class="ghead"><div><div class="gname">'+m.name+'</div><div class="gblurb">'+m.blurb+'</div></div>' +
+      '<div class="gmeta"><span class="eff" style="--e:'+effColor(eff)+'">score <b class="num">'+Math.round(eff*100)+'</b></span><span>duration <b class="num">'+r.makespan.toFixed(1)+'</b></span><span>cost <b class="num">$'+r.cost.toFixed(0)+'</b></span><span>active <b class="num">'+r.utilization.toFixed(1)+'%</b></span>'+chip+'</div></div>' +
+      axis + '<div class="gbody">' + rows + '<div class="goverlay"><div class="done-line" style="left:'+pos(r.makespan)+'%"><span class="flag num">'+r.makespan.toFixed(1)+'</span></div>' + (ref ? '<div class="ref-line" style="left:'+pos(ref.makespan)+'%"></div>' : '') + '</div></div><details class="info"><summary>Strategy details</summary><p>'+m.info+'</p></details></article>';
   }).join("");
   const box = $("#gantts");
   box.innerHTML = html;
   box.classList.toggle("show-idle", $("#idleToggle").checked);
 }
 
-/* ---------- shared tooltip ---------- */
+/* ---------- shared tooltip + cross-strategy task highlight ---------- */
 const tip = $("#tip");
+let hlId = null;
+function setHl(id) {
+  if (id === hlId) return; hlId = id;
+  const g = $("#gantts");
+  g.querySelectorAll(".bar.hl").forEach(b => b.classList.remove("hl"));
+  g.classList.toggle("hovering", id !== null);
+  if (id !== null) g.querySelectorAll('.bar[data-id="' + id + '"]').forEach(b => b.classList.add("hl"));
+}
 document.addEventListener("pointermove", e => {
   const bar = e.target.closest && e.target.closest(".bar[data-tip]");
-  if (!bar) { tip.classList.remove("on"); return; }
-  tip.textContent = bar.dataset.tip;
-  tip.style.transform = "translate(" + (e.clientX + 14) + "px," + (e.clientY + 14) + "px)";
-  tip.classList.add("on");
+  if (!bar) { tip.classList.remove("on"); setHl(null); return; }
+  const [a, ...rest] = bar.dataset.tip.split(" \u00B7 ");
+  tip.innerHTML = "<b>" + a + "</b>" + rest.map(x => "<span>" + x + "</span>").join("");
+  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 8);
+  tip.style.transform = "translate(" + x + "px," + y + "px)";
+  tip.classList.add("on"); setHl(bar.dataset.id);
 });
-document.addEventListener("mouseout", e => { if (!e.relatedTarget) tip.classList.remove("on"); });
+document.addEventListener("mouseout", e => { if (!e.relatedTarget) { tip.classList.remove("on"); setHl(null); } });
 
 /* =====================================================================
    Averaged benchmarks
@@ -651,6 +784,14 @@ function renderTradeoff(pts) {
 /* =====================================================================
    Boot
    ===================================================================== */
+(function theme() {
+  const root = document.documentElement, btn = $("#themeBtn");
+  const cur = () => root.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  const paint = () => { btn.textContent = cur() === "dark" ? "\u2600" : "\u263E"; };
+  try { const t = localStorage.getItem("fleet-theme"); if (t) root.dataset.theme = t; } catch (e) {}
+  btn.addEventListener("click", () => { const n = cur() === "dark" ? "light" : "dark"; root.dataset.theme = n; try { localStorage.setItem("fleet-theme", n); } catch (e) {} paint(); });
+  paint();
+})();
 buildSteps();
 buildBars();
 generate(false);
