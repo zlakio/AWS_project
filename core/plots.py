@@ -1,6 +1,5 @@
 """
-Generates report-ready plots (Days 14-15 territory) from the benchmark
-suite built on Day 9. Run directly: python -m core.plots
+
 
 Produces four PNGs in the `plots/` folder:
     1. static_comparison.png     -- HEFT vs LS vs Cost-ILS (makespan, cost,

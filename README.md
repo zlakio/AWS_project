@@ -55,7 +55,7 @@ AWS_Project/
 ├── tests/                   # One test module per core component, all passing
 ├── notes/                   # Day-by-day concept notes (theory + implementation)
 ├── plots/                   # Generated PNG figures (after running plots.py)
-├── frontend.html            # Interactive dashboard (Gantt view + live metrics)
+├── dashboard.html            # Interactive dashboard (Gantt view + live metrics)
 └── venv/                    # Local virtual environment (not committed)
 ```
 
@@ -106,4 +106,3 @@ python -m core.plots
 ## References
 
 1. H. Topcuoglu, S. Hariri, and M.-Y. Wu, "Performance-effective and low-complexity task scheduling for heterogeneous computing," *IEEE Transactions on Parallel and Distributed Systems*, vol. 13, no. 3, pp. 260–274, 2002. — the original paper introducing HEFT and CPOP; defines the upward-rank priority scheme and insertion-based earliest-finish-time scheduling used as the baseline in this project.
-2. "IKHeft" (iterative perturbation of HEFT VM assignments via lightweight stochastic operators) — referenced in this project's original literature review as the local-search baseline this work builds on. *Full citation (authors/venue/year) not yet confirmed — this term does not appear in standard academic search indexes under this name, so it's most likely from your own project's prior literature review materials (e.g. `idea3.pdf` / the original `Cloud-Task-Scheduling-Optimizer` proposal). Upload that file here and I can pull the exact citation.*

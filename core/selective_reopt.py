@@ -1,10 +1,10 @@
 """
-Selective re-optimization (Day 8): given a disruption, repair ONLY the
+Selective re-optimization : given a disruption, repair ONLY the
 affected portion of a running schedule, freezing everything else exactly
 as it was.
 
 Pipeline for one event:
-    1. Find directly-affected tasks (Day 7's get_affected_task_ids).
+    1. Find directly-affected tasks .
     2. Expand to include every DOWNSTREAM task too (a delayed/moved task
        can push its successors later, even if they weren't on the
        disrupted VM themselves).
@@ -132,7 +132,7 @@ def handle_event(
     threshold: float,
 ) -> Tuple[Schedule, DAG, list, Set[int]]:
     """
-    Top-level entry point tying Day 7 (detection) and Day 8 (repair)
+    Top-level entry point tying detection and repair
     together: only actually repairs the schedule if the change detector
     says the disruption is significant enough. Otherwise returns the
     schedule completely unchanged -- the whole point of the change

@@ -54,18 +54,7 @@ def get_affected_task_ids(
     event: DynamicEvent,
     current_time: float,
 ) -> Set[int]:
-    """
-    Returns the set of task ids that need to be reconsidered because of
-    this event. A task counts as affected if:
-      - it's on the event's VM (for slowdown/failure), AND
-      - it hasn't finished yet at current_time (end_time > current_time)
-        -- already-completed work is never undone.
 
-    For a NewTaskArrivalEvent, the only "affected" task is the new task
-    itself (it doesn't exist in any prior schedule yet, so nothing else
-    needs to move because of it -- Day 8's repair logic decides where to
-    slot it in).
-    """
     if isinstance(event, NewTaskArrivalEvent):
         return {event.task.id}
 
@@ -112,7 +101,7 @@ def compute_disruption_magnitude(
 def is_significant_change(magnitude: float, threshold: float) -> bool:
     """
     The actual "change detector": decides whether a disruption is big
-    enough to trigger selective re-optimization (Day 8), or small enough
+    enough to trigger selective re-optimization, or small enough
     to just ignore and let the existing schedule play out.
 
     `threshold` is a tunable parameter -- too low and you re-optimize on

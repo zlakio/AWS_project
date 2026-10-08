@@ -90,7 +90,7 @@ def _earliest_finish_time_on_vm(
 
     `min_start` is a floor on when the task may start -- 0.0 (the default)
     changes nothing for normal HEFT scheduling. It matters for DYNAMIC
-    REPAIR (Day 8): when re-scheduling a task after a disruption at
+    REPAIR when re-scheduling a task after a disruption at
     simulation time T, the task obviously can't be backdated to before T,
     even if an earlier gap would otherwise fit it.
 

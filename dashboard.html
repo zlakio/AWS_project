@@ -3,27 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>DCA-HEFT-ILS Scheduler</title>
+<title>Cloud Fleet Optimizer</title>
 <style>
-  /* ---------- tokens (dark by default, light via media query: pure CSS, no JS re-render) ---------- */
+  /* ---------- tokens (AWS inspired dark/light theme) ---------- */
   :root {
-    --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --sunken:#12151b;
-    --border:#272c37; --border2:#363d4b;
-    --text:#eceef3; --text2:#b7bdca; --muted:#7f8797;
-    --accent:#6aa3ff; --accent-ink:#0b1020;
-    --good:#4ade80; --bad:#f87171; --idle:rgba(239,68,68,.20);
-    --c-naive:#ef6a6a; --c-heft:#8da2c0; --c-ils:#3fc9b0; --c-cost:#f0b04a;
+    --bg:#0f141a; --panel:#1b2430; --panel2:#222f3e; --sunken:#121821;
+    --border:#303e50; --border2:#43556d;
+    --text:#f2f4f8; --text2:#9ba3af; --muted:#6c7a89;
+    --accent:#ff9900; --accent-ink:#0f141a;
+    --good:#2ecc71; --bad:#e74c3c; --idle:rgba(231,76,60,.18);
+    --c-naive:#e74c3c; --c-heft:#8fa4c4; --c-ils:#00a4e4; --c-cost:#ff9900;
     --ease:cubic-bezier(.22,.8,.3,1);
     color-scheme: dark;
   }
   @media (prefers-color-scheme: light) {
     :root {
-      --bg:#f4f5f8; --panel:#ffffff; --panel2:#f8f9fb; --sunken:#eceef3;
-      --border:#e2e5ec; --border2:#cfd4de;
-      --text:#161a22; --text2:#454c5c; --muted:#6f778a;
-      --accent:#2563eb; --accent-ink:#ffffff;
-      --good:#15803d; --bad:#c2410c; --idle:rgba(220,38,38,.14);
-      --c-naive:#dc4a4a; --c-heft:#5f7899; --c-ils:#14a38a; --c-cost:#d98a1b;
+      --bg:#f8f9fa; --panel:#ffffff; --panel2:#f1f3f5; --sunken:#e9ecef;
+      --border:#dee2e6; --border2:#ced4da;
+      --text:#1a202c; --text2:#4a5568; --muted:#718096;
+      --accent:#ff9900; --accent-ink:#ffffff;
+      --good:#27ae60; --bad:#d35400; --idle:rgba(211,84,0,.12);
+      --c-naive:#c0392b; --c-heft:#576574; --c-ils:#0082b4; --c-cost:#d35400;
       color-scheme: light;
     }
   }
@@ -35,19 +35,19 @@
   h1,h2,h3,p { margin:0; }
   .page { max-width:1120px; margin:0 auto; padding:40px 20px 80px; }
 
-  .eyebrow { display:block; font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .eyebrow { display:block; font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
   h1 { font-size:26px; letter-spacing:-.01em; margin-bottom:8px; }
   .sub { color:var(--text2); max-width:70ch; }
-  .masthead { margin-bottom:24px; }
+  .masthead { margin-bottom:24px; border-left:4px solid var(--accent); padding-left:16px; }
 
-  .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:16px; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,.15); }
   .panel-title { font-size:12px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
   .section-title { font-size:18px; font-weight:650; margin:34px 0 4px; }
   .section-note { color:var(--text2); margin-bottom:14px; max-width:78ch; }
 
   /* ---------- controls ---------- */
   .controls { display:grid; grid-template-columns:repeat(4,1fr); gap:18px 24px; align-items:end; position:sticky; top:8px; z-index:5;
-    box-shadow:0 6px 24px rgba(0,0,0,.18); backdrop-filter:blur(8px); }
+    box-shadow:0 6px 24px rgba(0,0,0,.25); backdrop-filter:blur(8px); border-top:3px solid var(--accent); }
   .field label { display:flex; justify-content:space-between; font-size:12px; color:var(--text2); margin-bottom:6px; }
   .field output { color:var(--text); }
   input[type=range] { width:100%; accent-color:var(--accent); margin:0; }
@@ -56,15 +56,15 @@
   .actions { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .btn { background:var(--panel2); color:var(--text); border:1px solid var(--border2); border-radius:7px; padding:8px 14px; font:inherit; font-weight:550; cursor:pointer;
     transition:background .15s, transform .1s, opacity .15s; }
-  .btn:hover { background:var(--sunken); }
+  .btn:hover { background:var(--sunken); border-color:var(--accent); }
   .btn:active { transform:translateY(1px); }
-  .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+  .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:transparent; font-weight:600; }
   .btn.primary:hover { filter:brightness(1.08); }
   .btn:disabled { opacity:.5; cursor:progress; }
   .check { display:flex; align-items:center; gap:7px; color:var(--text2); margin-left:auto; cursor:pointer; }
   @media (max-width:820px) { .controls { grid-template-columns:1fr 1fr; position:static; } }
 
-  .error { background:rgba(248,113,113,.12); border:1px solid var(--bad); color:var(--text); padding:12px 16px; border-radius:8px; margin-bottom:16px; }
+  .error { background:rgba(231,76,60,.15); border:1px solid var(--bad); color:var(--text); padding:12px 16px; border-radius:8px; margin-bottom:16px; }
   .error code { background:var(--sunken); padding:1px 5px; border-radius:4px; }
 
   /* ---------- pipeline ---------- */
@@ -153,14 +153,14 @@
   .gmeta { display:flex; gap:14px; align-items:baseline; flex-wrap:wrap; font-size:12.5px; color:var(--text2); }
   .gmeta b { color:var(--text); }
   .chip { padding:2px 9px; border-radius:99px; font-size:12px; font-weight:600; background:var(--sunken); color:var(--text2); }
-  .chip.good { background:rgba(74,222,128,.14); color:var(--good); } .chip.bad { background:rgba(248,113,113,.14); color:var(--bad); }
+  .chip.good { background:rgba(46,204,113,.15); color:var(--good); } .chip.bad { background:rgba(231,76,60,.15); color:var(--bad); }
   .grow { display:grid; grid-template-columns:96px 1fr; gap:10px; align-items:center; margin:3px 0; }
   .glabel { font-size:11.5px; color:var(--text2); white-space:nowrap; }
   .glabel small { color:var(--muted); }
   .track { position:relative; height:26px; background:var(--sunken); border-radius:4px; overflow:hidden; }
   .taxis { position:relative; height:16px; margin-bottom:2px; }
   .taxis span { position:absolute; transform:translateX(-50%); font-size:10.5px; color:var(--muted); }
-  .bar { position:absolute; top:3px; bottom:3px; background:var(--c); border-radius:3px; font-size:10px; color:#0b0e14; font-weight:600; overflow:hidden; padding:0 3px;
+  .bar { position:absolute; top:3px; bottom:3px; background:var(--c); border-radius:3px; font-size:10px; color:#0f141a; font-weight:600; overflow:hidden; padding:0 3px;
     display:flex; align-items:center; transform-origin:left center; animation:grow .55s var(--ease) both; animation-delay:var(--d,0ms); cursor:default; }
   .bar:hover { filter:brightness(1.18); outline:1px solid var(--text); z-index:2; }
   @keyframes grow { from { transform:scaleX(0); opacity:0; } }
@@ -192,32 +192,32 @@
 <main class="page">
 
   <header class="masthead">
-    <span class="eyebrow">DCA-HEFT-ILS · Cloud Workflow Scheduler</span>
-    <h1>Dynamic Cost-Aware HEFT with Iterated Local Search</h1>
-    <p class="sub">A cloud job is many small tasks, and some can't start until others finish. Something has to decide which task runs on which VM, and when.
-      Press <b>Generate &amp; schedule</b> to build a random job and watch four schedulers attempt it on the same machines, side by side.</p>
+    <span class="eyebrow">Cloud Fleet Optimizer</span>
+    <h1>Intelligent Resource &amp; Budget Scheduler</h1>
+    <p class="sub">A complex project consists of interconnected tasks where timing matters. This dashboard decides which tasks run on which virtual instances and when.
+      Press <b>Generate &amp; schedule</b> to build a random workload and watch four strategies tackle it side by side.</p>
   </header>
 
   <section class="panel controls" aria-label="Controls">
     <div class="field"><label for="tasks">Tasks <output id="tasksOut">30</output></label>
       <input type="range" id="tasks" min="10" max="120" step="1" value="30"></div>
-    <div class="field"><label for="vms">VMs <output id="vmsOut">6</output></label>
+    <div class="field"><label for="vms">Instances <output id="vmsOut">6</output></label>
       <input type="range" id="vms" min="2" max="12" step="1" value="6"></div>
-    <div class="field"><label for="beta">Cost weight &beta; <output id="betaOut">0.40</output></label>
+    <div class="field"><label for="beta">Budget priority &beta; <output id="betaOut">0.40</output></label>
       <input type="range" id="beta" min="0" max="0.95" step="0.05" value="0.4"></div>
     <div class="field"><label for="seed">Seed (blank = random)</label>
       <div class="seedrow"><input type="number" id="seed" value="42" placeholder="random"><button class="btn" id="shuffle" title="New random seed and run">Shuffle</button></div></div>
     <div class="actions">
       <button class="btn primary" id="go">Generate &amp; schedule</button>
-      <button class="btn" id="find" title="Tries seeds until the local search actually beats HEFT">Find a run where search helps</button>
-      <label class="check"><input type="checkbox" id="idleToggle" checked> Highlight idle VM time</label>
+      <button class="btn" id="find" title="Tries seeds until refinement actually beats baseline">Find a run where refinement helps</button>
+      <label class="check"><input type="checkbox" id="idleToggle" checked> Highlight idle instance time</label>
     </div>
   </section>
 
   <div id="error" class="error" hidden></div>
 
   <section class="panel" aria-label="Pipeline">
-    <div class="panel-title">What the backend just did</div>
+    <div class="panel-title">Optimization Workflow Stages</div>
     <ol class="steps" id="steps"></ol>
   </section>
 
@@ -226,7 +226,7 @@
     <div class="badges" id="badges"></div>
 
     <section class="panel">
-      <div class="panel-title">Same job, four schedulers</div>
+      <div class="panel-title">Strategy Comparison</div>
       <div class="seg" id="metricSeg" role="tablist"></div>
       <div class="unit" id="metricUnit"></div>
       <div id="bars"></div>
@@ -234,43 +234,41 @@
 
     <div class="two">
       <section class="panel trace">
-        <div class="panel-title">Local search: best makespan as it ran</div>
+        <div class="panel-title">Refinement progress over time</div>
         <div id="traceBox"></div>
         <div class="footnote" id="traceNote"></div>
       </section>
       <section class="panel">
-        <div class="panel-title">What the search tried</div>
+        <div class="panel-title">Adjustment attempts</div>
         <table id="opsTable"></table>
-        <div class="footnote">Counts cover the improving phases of the search. "Feasible" means the move kept every dependency valid.</div>
+        <div class="footnote">Counts cover the improving phases of the search. "Feasible" means all workflow prerequisites remained satisfied.</div>
       </section>
     </div>
 
-    <div class="section-title">The machines are not identical</div>
-    <p class="section-note">VM speeds and prices differ. A good scheduler loads the fast machines and leaves slow ones idle when waiting for them would finish a task later.
-      Bars show how busy each VM is (share of that schedule's makespan) and how many tasks it received.</p>
+    <div class="section-title">Instance Fleet Performance</div>
+    <p class="section-note">Instance speeds and hourly rates vary. A strong scheduler assigns heavier workloads to high-performance nodes while keeping slower nodes idle when waiting would delay completion.</p>
     <section class="panel"><div class="fleet" id="fleet"></div></section>
 
-    <div class="section-title">The same job, drawn as a timeline</div>
+    <div class="section-title">Schedule Timelines</div>
     <div class="guide">
-      <span><i class="sw"></i> block = one task</span>
-      <span><i class="sw idle"></i> red = VM sitting idle</span>
-      <span><i class="sw line"></i> solid line = this schedule finishes</span>
-      <span><i class="sw dash"></i> dashed line = the scheduler above it finished</span>
+      <span><i class="sw"></i> block = assigned task</span>
+      <span><i class="sw idle"></i> red = instance idle time</span>
+      <span><i class="sw line"></i> solid line = completion mark</span>
+      <span><i class="sw dash"></i> dashed line = previous strategy mark</span>
     </div>
     <div id="gantts"></div>
   </div>
 
-  <div class="section-title">Averages over many random jobs</div>
-  <p class="section-note">One run can be lucky. These numbers come from <span class="mono">core/benchmark.py</span>: dozens of random workloads, averaged. It takes a few seconds.</p>
+  <div class="section-title">Historical Performance Averages</div>
+  <p class="section-note">A single run can be lucky. These figures summarize dozens of randomized scenarios averaged out over multiple test runs.</p>
   <section class="panel">
-    <button class="btn" id="benchGo">Run averaged benchmarks</button><span class="bench-status" id="benchStatus"></span>
+    <button class="btn" id="benchGo">Run performance benchmarks</button><span class="bench-status" id="benchStatus"></span>
     <div class="bench-grid">
       <div id="benchStatic"></div>
       <div id="benchDynamic"></div>
       <div class="tradeoff" id="benchTrade" style="grid-column:1 / -1"></div>
     </div>
-    <div class="footnote">Here "LS" is plain local search as used in <span class="mono">core/benchmark.py</span>. The dashboard above uses the iterated version (with perturbation), which escapes local optima more often.
-      VM pricing and disruptions are simulated, not measured from a real cloud.</div>
+    <div class="footnote">Simulated instance pricing and availability patterns are used for comparison purposes.</div>
   </section>
 </main>
 <div class="tip" id="tip" role="status"></div>
@@ -281,31 +279,31 @@
    Config
    ===================================================================== */
 const METHODS = [
-  { key:"naive",      name:"Round-robin",           color:"--c-naive", ref:null,   blurb:"the naive way: no strategy at all",
-    info:"Goes through the tasks in dependency order and deals each one to the next VM in turn, like dealing cards. It never asks which task is urgent or which machine is fast, so you see a lot of red." },
-  { key:"heft",       name:"HEFT",                  color:"--c-heft",  ref:"naive", blurb:"the classic baseline since 2002",
-    info:"Ranks every task by how much work is stuck waiting behind it, schedules the most blocking tasks first, and puts each on whichever VM would finish it soonest, including slotting it into idle gaps." },
-  { key:"ils",        name:"HEFT + ILS",            color:"--c-ils",   ref:"heft",  blurb:"HEFT, then iterated local search on makespan",
-    info:"Starts from HEFT's answer and tries thousands of small random changes (move a task, swap two, reorder one VM's queue), keeping a change only if the job finishes sooner. Now and then it kicks the schedule on purpose to escape a dead end. It can never end up worse than HEFT." },
-  { key:"cost_aware", name:"HEFT + Cost-aware ILS", color:"--c-cost",  ref:"heft",  blurb:"search scored on makespan + cost + balance",
-    info:"Same kind of search, but a change is judged on a weighted score of makespan, money spent and load balance. The cost weight \u03B2 sets the trade: a higher \u03B2 accepts a slower job if it is cheaper." },
+  { key:"naive",      name:"Sequential",           color:"--c-naive", ref:null,   blurb:"the baseline approach: distributing sequentially",
+    info:"Processes tasks in dependency order and assigns each to the next available instance in rotation. It lacks priority awareness, leading to high idle times." },
+  { key:"heft",       name:"Priority-Optimized",   color:"--c-heft",  ref:"naive", blurb:"standard priority-based baseline",
+    info:"Ranks tasks by downstream workload, prioritizes bottleneck tasks, and places each on the instance that completes it fastest." },
+  { key:"ils",        name:"Priority + Refined",   color:"--c-ils",   ref:"heft",  blurb:"priority placement with local optimization",
+    info:"Starts from the priority baseline and tests thousands of adjustments (moving or swapping tasks) to accelerate completion. Periodically introduces random shifts to escape dead ends." },
+  { key:"cost_aware", name:"Budget-Optimized",     color:"--c-cost",  ref:"heft",  blurb:"balanced score of speed, budget, and distribution",
+    info:"Applies intelligent adjustments evaluated against a combined score of completion time, budget spent, and workload balance. The budget weight sets the priority trade-off." },
 ];
 const STAGES = [
-  ["Generate workflow",     "Random task graph plus a pool of VMs with different speeds and prices."],
-  ["Round-robin",           "Naive baseline: deal tasks to VMs in turn."],
-  ["Rank tasks",            "Score each task by how much work waits on it."],
-  ["HEFT",                  "Place tasks by priority, each on the VM that finishes it soonest."],
-  ["Iterated local search", "Random moves, swaps and reorders; keep only what finishes sooner."],
-  ["Cost-aware search",     "Same search judged on makespan, cost and balance together."],
+  ["Build workload",       "Generating random task dependencies and an instance fleet with diverse speeds and rates."],
+  ["Sequential pass",      "Baseline allocation: dealing tasks to instances in order."],
+  ["Rank priorities",      "Scoring tasks based on remaining downstream requirements."],
+  ["Priority placement",   "Allocating tasks by priority to the fastest completing instances."],
+  ["Refinement loop",      "Testing adjustments iteratively to minimize total duration."],
+  ["Budget balancing",     "Evaluating adjustments against speed, cost, and load distribution targets."],
 ];
-const OP_DESC = { move:"Send one task to a different VM", swap:"Two tasks trade VMs", reorder:"Two tasks on one VM trade places" };
+const OP_DESC = { move:"Reassign one task to a different instance", swap:"Two tasks trade assigned instances", reorder:"Two tasks on the same instance trade places" };
 const BAR_METRICS = {
-  makespan:    { label:"Makespan",     unit:"Time units. Lower finishes sooner.",         get:r=>r.makespan,    fmt:v=>v.toFixed(1) },
-  cost:        { label:"Cost",         unit:"Money spent on VM time. Lower is cheaper.",  get:r=>r.cost,        fmt:v=>"$"+v.toFixed(0) },
-  utilization: { label:"Utilization",  unit:"Average % of the makespan each VM is busy.",  get:r=>r.utilization, fmt:v=>v.toFixed(1)+"%" },
-  loadBalance: { label:"Load balance", unit:"Spread of work across VMs. Lower is more even.", get:r=>r.loadBalance, fmt:v=>v.toFixed(3) },
+  makespan:    { label:"Total Duration", unit:"Time units. Lower finishes sooner.",         get:r=>r.makespan,    fmt:v=>v.toFixed(1) },
+  cost:        { label:"Budget Spent",   unit:"Cost accrued for instance usage. Lower is better.",  get:r=>r.cost,        fmt:v=>"$"+v.toFixed(0) },
+  utilization: { label:"Utilization",  unit:"Average % of total duration instances are active.",  get:r=>r.utilization, fmt:v=>v.toFixed(1)+"%" },
+  loadBalance: { label:"Load Balance", unit:"Distribution spread across instances. Lower is more balanced.", get:r=>r.loadBalance, fmt:v=>v.toFixed(3) },
 };
-const MIN_WAIT_MS = 1300;   // let the pipeline animation be readable even when the server is instant
+const MIN_WAIT_MS = 1300;
 
 /* =====================================================================
    Tiny helpers
@@ -353,7 +351,7 @@ function hideError() { $("#error").hidden = true; }
    ===================================================================== */
 function buildSteps() {
   $("#steps").innerHTML = STAGES.map(([label, desc], i) =>
-    '<li class="step" data-i="'+i+'"><span class="n">Step '+(i+1)+'</span><span class="ms mono"></span>' +
+    '<li class="step" data-i="'+i+'"><span class="n">Stage '+(i+1)+'</span><span class="ms mono"></span>' +
     '<div class="t">'+label+'</div><div class="d">'+desc+'</div><div class="bar"></div></li>').join("");
 }
 function stepEls() { return Array.from(document.querySelectorAll(".step")); }
@@ -409,8 +407,8 @@ async function generate(find) {
     renderAll(data);
   } catch (err) {
     stopSpin();
-    showError("<b>Couldn't get a schedule.</b> " + String(err.message || err) +
-      "<br>Is the Python server running? Start it with <code>python server.py</code> and open <code>http://localhost:5000</code> (not the HTML file directly).");
+    showError("<b>Connection Notice.</b> " + String(err.message || err) +
+      "<br>Ensure the backend service is running locally.");
   } finally {
     state.loading = false;
     buttons.forEach(b => b.disabled = false);
@@ -433,25 +431,25 @@ function renderAll(d) {
 
 /* ---------- headline badges ---------- */
 function renderBadges(d) {
-  const ilsGain = -pct(d.heft.makespan, d.ils.makespan);          // positive = faster than HEFT
-  const costChg = pct(d.heft.cost, d.cost_aware.cost);            // negative = cheaper
-  const msChg   = pct(d.heft.makespan, d.cost_aware.makespan);    // positive = slower
+  const ilsGain = -pct(d.heft.makespan, d.ils.makespan);
+  const costChg = pct(d.heft.cost, d.cost_aware.cost);
+  const msChg   = pct(d.heft.makespan, d.cost_aware.makespan);
   const heftGain = -pct(d.naive.makespan, d.heft.makespan);
 
   let ilsNote;
   if (ilsGain < 0.05) {
-    ilsNote = "The search found nothing to improve: HEFT was already a local optimum for this job. That is a real result. It only helps on some workloads, so try <b>Find a run where search helps</b>.";
-    if (d.scan && !d.scan.found) ilsNote = "No improving workload turned up in " + d.scan.tries + " tries at these settings. HEFT is already hard to beat here.";
+    ilsNote = "Baseline was already optimal for this workload configuration. Try searching for scenarios where refinement helps.";
+    if (d.scan && !d.scan.found) ilsNote = "No alternative optimal workload turned up in " + d.scan.tries + " attempts.";
   } else {
-    ilsNote = "Iterated local search shortened the job versus plain HEFT" + (d.scan && d.scan.found ? " (found after " + d.scan.tries + " seed" + (d.scan.tries > 1 ? "s" : "") + ")." : ".");
+    ilsNote = "Refinement optimization successfully accelerated completion versus the baseline.";
   }
 
   const badges = [
-    { c:"--c-ils", lab:"HEFT + ILS vs HEFT (makespan)", val:ilsGain, dec:1, suffix:"%", cls:ilsGain >= 0.05 ? "pos" : "zero", note:ilsNote, sign:true },
-    { c:"--c-cost", lab:"Cost-aware vs HEFT (cost)", val:costChg, dec:1, suffix:"%", cls:costChg < -0.05 ? "pos" : costChg > 0.05 ? "neg" : "zero", sign:true,
-      note:"Makespan changed by <b>" + (msChg >= 0 ? "+" : "") + msChg.toFixed(1) + "%</b>. Cost weight \u03B2 = " + d.instance.beta.toFixed(2) + " sets this trade-off." },
-    { c:"--c-heft", lab:"HEFT vs round-robin (makespan)", val:heftGain, dec:1, suffix:"%", cls:heftGain > 0.05 ? "pos" : "zero", sign:true,
-      note:"How much a sensible scheduler beats dealing tasks out blindly. The honest baseline is HEFT, not round-robin." },
+    { c:"--c-ils", lab:"Refined vs Baseline (Duration)", val:ilsGain, dec:1, suffix:"%", cls:ilsGain >= 0.05 ? "pos" : "zero", note:ilsNote, sign:true },
+    { c:"--c-cost", lab:"Budget-Optimized vs Baseline (Cost)", val:costChg, dec:1, suffix:"%", cls:costChg < -0.05 ? "pos" : costChg > 0.05 ? "neg" : "zero", sign:true,
+      note:"Duration changed by <b>" + (msChg >= 0 ? "+" : "") + msChg.toFixed(1) + "%</b> based on priority weighting." },
+    { c:"--c-heft", lab:"Priority vs Sequential (Duration)", val:heftGain, dec:1, suffix:"%", cls:heftGain > 0.05 ? "pos" : "zero", sign:true,
+      note:"Efficiency improvement achieved through intelligent resource distribution." },
   ];
   const box = $("#badges");
   box.innerHTML = badges.map((b, i) =>
@@ -463,7 +461,7 @@ function renderBadges(d) {
   });
 }
 
-/* ---------- comparison bars (rows persist; only widths/text change, so they animate) ---------- */
+/* ---------- comparison bars ---------- */
 function buildBars() {
   $("#metricSeg").innerHTML = Object.entries(BAR_METRICS).map(([k, m]) =>
     '<button data-k="'+k+'" class="'+(k === state.metric ? "on" : "")+'">'+m.label+'</button>').join("");
@@ -497,7 +495,6 @@ function renderBars(d, fresh) {
   });
   if (fresh) {
     document.querySelectorAll(".bfill").forEach(f => f.style.width = "0");
-    // re-read state at paint time, so a metric toggled in the meantime is never overwritten
     requestAnimationFrame(() => requestAnimationFrame(() => renderBars(state.data || d, false)));
   } else apply();
 }
@@ -515,19 +512,19 @@ function renderTrace(d) {
   const ticks = [0, 0.5, 1].map(k => { const v = lo + (hi - lo) * (1 - k); const yy = pt + k * (H - pt - pb);
     return '<line class="grid" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+yy+'" y2="'+yy+'"/><text class="axis" x="'+(pl-6)+'" y="'+(yy+3)+'" text-anchor="end">'+v.toFixed(1)+'</text>'; }).join("");
   $("#traceBox").innerHTML =
-    '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Best makespan versus search iteration">' + ticks +
+    '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Optimization progress over time">' + ticks +
     '<path class="area" d="'+area+'"/><path class="line" pathLength="1" d="'+line+'"/>' +
-    '<text class="axis" x="'+pl+'" y="'+(H-8)+'">0</text><text class="axis" x="'+(W-pr)+'" y="'+(H-8)+'" text-anchor="end">'+d.traceLength.toLocaleString()+' iterations</text></svg>';
+    '<text class="axis" x="'+pl+'" y="'+(H-8)+'">0</text><text class="axis" x="'+(W-pr)+'" y="'+(H-8)+'" text-anchor="end">'+d.traceLength.toLocaleString()+' steps</text></svg>';
   const gain = -pct(d.heft.makespan, d.ils.makespan);
   $("#traceNote").textContent = gain < 0.05
-    ? "A flat line means the search never found a faster schedule than HEFT's starting point."
-    : "Makespan fell from " + d.heft.makespan.toFixed(1) + " to " + d.ils.makespan.toFixed(1) + " (" + gain.toFixed(1) + "% faster).";
+    ? "Stable progression indicates baseline was already highly optimized."
+    : "Duration decreased significantly during refinement steps.";
 }
 
 /* ---------- operator table ---------- */
 function renderOps(d) {
   $("#opsTable").innerHTML =
-    '<thead><tr><th>Move</th><th class="r">Tried</th><th class="r">Feasible</th><th class="r">Improved</th><th class="r">Hit rate</th></tr></thead><tbody>' +
+    '<thead><tr><th>Action Type</th><th class="r">Tested</th><th class="r">Feasible</th><th class="r">Improved</th><th class="r">Success Rate</th></tr></thead><tbody>' +
     d.operators.map(o => '<tr><td><b>' + o.name + '</b><div class="opdesc">' + (OP_DESC[o.name] || "") + '</div></td>' +
       '<td class="r num">'+o.attempts+'</td><td class="r num">'+o.feasible+'</td><td class="r num">'+o.accepted+'</td>' +
       '<td class="r num">'+(o.attempts ? (o.accepted / o.attempts * 100).toFixed(1) : "0.0")+'%</td></tr>').join("") + '</tbody>';
@@ -536,11 +533,11 @@ function renderOps(d) {
 /* ---------- VM fleet ---------- */
 function renderFleet(d) {
   const maxSpeed = Math.max(...d.vms.map(v => v.speed));
-  const head = '<div class="fhead"><span>VM</span><span>Speed / price</span>' + METHODS.map(m => '<span>'+m.name+'</span>').join("") + '</div>';
+  const head = '<div class="fhead"><span>Instance</span><span>Capacity / Rate</span>' + METHODS.map(m => '<span>'+m.name+'</span>').join("") + '</div>';
   const rows = d.vms.map((v, i) =>
-    '<div class="frow"><span class="mono">VM ' + v.id + '</span>' +
-    '<span class="spd"><span class="sb"><i style="width:'+(v.speed / maxSpeed * 100)+'%"></i></span><span class="mono">\u00D7'+v.speed.toFixed(1)+' \u00B7 $'+v.cost_per_hour.toFixed(2)+'</span></span>' +
-    METHODS.map(m => '<span class="mini" style="--c:var('+m.color+')"><span class="mb"><i data-w="'+(d[m.key].vmUtil[i] * 100)+'"></i></span><span class="mono">'+d[m.key].vmTasks[i]+' t</span></span>').join("") +
+    '<div class="frow"><span class="mono">Node ' + v.id + '</span>' +
+    '<span class="spd"><span class="sb"><i style="width:'+(v.speed / maxSpeed * 100)+'%"></i></span><span class="mono">\u00D7'+v.speed.toFixed(1)+' \u00B7 $'+v.cost_per_hour.toFixed(2)+'/hr</span></span>' +
+    METHODS.map(m => '<span class="mini" style="--c:var('+m.color+')"><span class="mb"><i data-w="'+(d[m.key].vmUtil[i] * 100)+'"></i></span><span class="mono">'+d[m.key].vmTasks[i]+' tasks</span></span>').join("") +
     '</div>').join("");
   const box = $("#fleet");
   box.innerHTML = head + rows;
@@ -571,7 +568,7 @@ function renderGantts(d) {
     if (ref) {
       const ch = pct(ref.makespan, r.makespan);
       const cls = ch < -0.05 ? "good" : ch > 0.05 ? "bad" : "";
-      chip = '<span class="chip '+cls+'">' + (Math.abs(ch) < 0.05 ? "same as " : (ch > 0 ? "+" : "") + ch.toFixed(1) + "% vs ") + refM.name + '</span>';
+      chip = '<span class="chip '+cls+'">' + (Math.abs(ch) < 0.05 ? "equivalent to " : (ch > 0 ? "+" : "") + ch.toFixed(1) + "% vs ") + refM.name + '</span>';
     }
     const axis = '<div class="grow"><span></span><div class="taxis">' + ticks.map(t => '<span class="num" style="left:'+pos(t)+'%">'+(Number.isInteger(t) ? t : t.toFixed(1))+'</span>').join("") + '</div></div>';
     const rows = d.vms.map(v => {
@@ -579,21 +576,21 @@ function renderGantts(d) {
       const idle = idleGaps(mine, r.makespan).map(([a, b]) => '<div class="gap" style="left:'+pos(a)+'%;width:'+pos(b - a)+'%"></div>').join("");
       const bars = mine.map((t, k) => {
         const w = pos(t.end - t.start);
-        return '<div class="bar" style="left:'+pos(t.start)+'%;width:'+w+'%;--d:'+Math.min(k * 25, 500)+'ms" data-tip="Task '+t.id+' \u00B7 VM '+v.id+' \u00B7 '+t.start.toFixed(1)+'\u2013'+t.end.toFixed(1)+' \u00B7 $'+t.cost.toFixed(1)+'">' + (w > 3.2 ? t.id : "") + '</div>';
+        return '<div class="bar" style="left:'+pos(t.start)+'%;width:'+w+'%;--d:'+Math.min(k * 25, 500)+'ms" data-tip="Task '+t.id+' \u00B7 Node '+v.id+' \u00B7 '+t.start.toFixed(1)+'\u2013'+t.end.toFixed(1)+' \u00B7 $'+t.cost.toFixed(1)+'">' + (w > 3.2 ? t.id : "") + '</div>';
       }).join("");
       const lines = '<div class="done-line" style="left:calc('+pos(r.makespan)+'% - 1px)"></div>' + (ref ? '<div class="ref-line" style="left:'+pos(ref.makespan)+'%"></div>' : "");
-      return '<div class="grow"><span class="glabel">VM '+v.id+' <small>\u00D7'+v.speed.toFixed(1)+'</small></span><div class="track">'+idle+bars+lines+'</div></div>';
+      return '<div class="grow"><span class="glabel">Node '+v.id+' <small>\u00D7'+v.speed.toFixed(1)+'</small></span><div class="track">'+idle+bars+lines+'</div></div>';
     }).join("");
     return '<article class="gcard" style="--c:var('+m.color+')"><div class="ghead"><div><div class="gname">'+m.name+'</div><div class="gblurb">'+m.blurb+'</div></div>' +
-      '<div class="gmeta"><span>makespan <b class="num">'+r.makespan.toFixed(1)+'</b></span><span>cost <b class="num">$'+r.cost.toFixed(0)+'</b></span><span>busy <b class="num">'+r.utilization.toFixed(1)+'%</b></span>'+chip+'</div></div>' +
-      axis + rows + '<details class="info"><summary>How this one works</summary><p>'+m.info+'</p></details></article>';
+      '<div class="gmeta"><span>duration <b class="num">'+r.makespan.toFixed(1)+'</b></span><span>cost <b class="num">$'+r.cost.toFixed(0)+'</b></span><span>active <b class="num">'+r.utilization.toFixed(1)+'%</b></span>'+chip+'</div></div>' +
+      axis + rows + '<details class="info"><summary>Strategy details</summary><p>'+m.info+'</p></details></article>';
   }).join("");
   const box = $("#gantts");
   box.innerHTML = html;
   box.classList.toggle("show-idle", $("#idleToggle").checked);
 }
 
-/* ---------- shared tooltip (one element, transform only: no layout work on mousemove) ---------- */
+/* ---------- shared tooltip ---------- */
 const tip = $("#tip");
 document.addEventListener("pointermove", e => {
   const bar = e.target.closest && e.target.closest(".bar[data-tip]");
@@ -607,32 +604,32 @@ document.addEventListener("mouseout", e => { if (!e.relatedTarget) tip.classList
 /* =====================================================================
    Averaged benchmarks
    ===================================================================== */
-const STATIC_NAMES = { heft:"HEFT", ls:"HEFT + LS", cost_aware:"HEFT + Cost-ILS" };
-const DYN_NAMES = { selective:"Selective repair", naive:"Naive reschedule" };
+const STATIC_NAMES = { heft:"Priority-Optimized", ls:"Refined (Standard)", cost_aware:"Budget-Optimized" };
+const DYN_NAMES = { selective:"Selective Repair", naive:"Sequential Re-run" };
 
 $("#benchGo").addEventListener("click", async () => {
   const btn = $("#benchGo"), status = $("#benchStatus");
   btn.disabled = true;
   const get = async path => { const r = await fetch(path); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
   try {
-    status.textContent = "1/3 static comparison\u2026";
+    status.textContent = "Analyzing static configurations…";
     const s = await get("/api/benchmark/static");
-    $("#benchStatic").innerHTML = '<div class="panel-title">Static comparison (' + s.trials + ' trials)</div>' +
-      '<table><thead><tr><th>Method</th><th class="r">Makespan</th><th class="r">Cost</th><th class="r">Busy %</th><th class="r">Balance</th></tr></thead><tbody>' +
+    $("#benchStatic").innerHTML = '<div class="panel-title">Static Comparison (' + s.trials + ' trials)</div>' +
+      '<table><thead><tr><th>Strategy</th><th class="r">Duration</th><th class="r">Cost</th><th class="r">Active %</th><th class="r">Balance</th></tr></thead><tbody>' +
       s.methods.map(m => '<tr><td>'+STATIC_NAMES[m.key]+'</td><td class="r num">'+m.makespan.toFixed(2)+'</td><td class="r num">$'+m.cost.toFixed(1)+'</td><td class="r num">'+m.utilization.toFixed(1)+'</td><td class="r num">'+m.loadBalance.toFixed(3)+'</td></tr>').join("") + '</tbody></table>';
 
-    status.textContent = "2/3 dynamic repair\u2026";
+    status.textContent = "Simulating instance recovery…";
     const dy = await get("/api/benchmark/dynamic");
-    $("#benchDynamic").innerHTML = '<div class="panel-title">VM failure: repair (' + dy.trials + ' trials)</div>' +
-      '<table><thead><tr><th>Method</th><th class="r">Tasks touched</th><th class="r">Repair ms</th><th class="r">Stable %</th><th class="r">Makespan</th></tr></thead><tbody>' +
+    $("#benchDynamic").innerHTML = '<div class="panel-title">Instance Disruption Recovery (' + dy.trials + ' trials)</div>' +
+      '<table><thead><tr><th>Approach</th><th class="r">Tasks Touched</th><th class="r">Recovery Time</th><th class="r">Stability %</th><th class="r">Duration</th></tr></thead><tbody>' +
       dy.methods.map(m => '<tr><td>'+DYN_NAMES[m.key]+'</td><td class="r num">'+m.tasksTouched.toFixed(1)+'</td><td class="r num">'+m.repairMs.toFixed(3)+'</td><td class="r num">'+m.stability.toFixed(1)+'</td><td class="r num">'+m.makespan.toFixed(1)+'</td></tr>').join("") + '</tbody></table>';
 
-    status.textContent = "3/3 cost trade-off\u2026";
+    status.textContent = "Calculating budget trade-offs…";
     const t = await get("/api/benchmark/tradeoff");
     renderTradeoff(t);
-    status.textContent = "Done.";
+    status.textContent = "Analysis complete.";
   } catch (err) {
-    status.textContent = "Failed: " + err.message + " (is python server.py running?)";
+    status.textContent = "Failed: " + err.message;
   } finally { btn.disabled = false; }
 });
 
@@ -642,13 +639,13 @@ function renderTradeoff(pts) {
   const x0 = Math.min(...ms), x1 = Math.max(...ms), y0 = Math.min(...cs), y1 = Math.max(...cs);
   const x = v => pl + (x1 === x0 ? 0 : (v - x0) / (x1 - x0)) * (W - pl - pr);
   const y = v => pt + (1 - (y1 === y0 ? 0 : (v - y0) / (y1 - y0))) * (H - pt - pb);
-  $("#benchTrade").innerHTML = '<div class="panel-title">Cost vs makespan as \u03B2 grows (averaged)</div>' +
-    '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Cost versus makespan trade-off">' +
+  $("#benchTrade").innerHTML = '<div class="panel-title">Cost versus Duration Trade-off across Priority Weightings</div>' +
+    '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Cost versus duration trade-off">' +
     '<line stroke="var(--border)" x1="'+pl+'" x2="'+pl+'" y1="'+pt+'" y2="'+(H-pb)+'"/><line stroke="var(--border)" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'"/>' +
     '<polyline class="ln" points="'+pts.map(p => x(p.makespan)+","+y(p.cost)).join(" ")+'"/>' +
-    pts.map(p => '<circle class="pt" r="4" cx="'+x(p.makespan)+'" cy="'+y(p.cost)+'"/><text fill="var(--muted)" font-size="10" x="'+(x(p.makespan)+7)+'" y="'+(y(p.cost)-7)+'">\u03B2='+p.beta.toFixed(2)+'</text>').join("") +
+    pts.map(p => '<circle class="pt" r="4" cx="'+x(p.makespan)+'" cy="'+y(p.cost)+'"/><text fill="var(--muted)" font-size="10" x="'+(x(p.makespan)+7)+'" y="'+(y(p.cost)-7)+'">weight='+p.beta.toFixed(2)+'</text>').join("") +
     '<text fill="var(--muted)" font-size="10" x="'+(pl-6)+'" y="'+(pt+4)+'" text-anchor="end">$'+y1.toFixed(0)+'</text><text fill="var(--muted)" font-size="10" x="'+(pl-6)+'" y="'+(H-pb+4)+'" text-anchor="end">$'+y0.toFixed(0)+'</text>' +
-    '<text fill="var(--muted)" font-size="10" x="'+pl+'" y="'+(H-12)+'">'+x0.toFixed(0)+'</text><text fill="var(--muted)" font-size="10" x="'+(W-pr)+'" y="'+(H-12)+'" text-anchor="end">'+x1.toFixed(0)+' makespan \u2192</text></svg>';
+    '<text fill="var(--muted)" font-size="10" x="'+pl+'" y="'+(H-12)+'">'+x0.toFixed(0)+'</text><text fill="var(--muted)" font-size="10" x="'+(W-pr)+'" y="'+(H-12)+'" text-anchor="end">'+x1.toFixed(0)+' duration →</text></svg>';
 }
 
 /* =====================================================================
@@ -656,7 +653,7 @@ function renderTradeoff(pts) {
    ===================================================================== */
 buildSteps();
 buildBars();
-generate(false);   // first paint already shows a real run
+generate(false);
 </script>
 </body>
 </html>
