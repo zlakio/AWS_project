@@ -1,5 +1,5 @@
-#Things to know about demo
-#Live demo uses simulated data; run server.py locally for the real optimizer
+Things to know about demo
+Live demo uses simulated data; run server.py locally for the real optimizer
 
 # DCA-HEFT-ILS
 
